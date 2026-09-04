@@ -1,0 +1,79 @@
+/*
+ * Self-hosted, OFL-1.1-licensed webfonts. See fonts/LICENSES/ for the full
+ * license text of each. Only the Latin subset is included (this is a local
+ * dev tool's UI, not a publishing platform).
+ */
+
+@font-face {
+  font-family: "Inter Variable";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 900;
+  src: url("fonts/inter-latin-wght-normal.woff2") format("woff2-variations");
+}
+
+@font-face {
+  font-family: "Inter Variable";
+  font-style: italic;
+  font-display: swap;
+  font-weight: 100 900;
+  src: url("fonts/inter-latin-wght-italic.woff2") format("woff2-variations");
+}
+
+/* The Extended-width build of Iosevka (same family, wider default spacing
+   -- more comfortable for prose-adjacent UI text than the narrow default). */
+@font-face {
+  font-family: "Iosevka Extended";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 400;
+  src: url("fonts/iosevka-extended-400-normal.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Iosevka Extended";
+  font-style: italic;
+  font-display: swap;
+  font-weight: 400;
+  src: url("fonts/iosevka-extended-400-italic.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Iosevka Extended";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 700;
+  src: url("fonts/iosevka-extended-700-normal.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Junicode";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 400;
+  src: url("fonts/junicode-regular.woff") format("woff");
+}
+
+@font-face {
+  font-family: "Junicode";
+  font-style: italic;
+  font-display: swap;
+  font-weight: 400;
+  src: url("fonts/junicode-italic.woff") format("woff");
+}
+
+@font-face {
+  font-family: "Junicode";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 700;
+  src: url("fonts/junicode-bold.woff") format("woff");
+}
+
+@font-face {
+  font-family: "Junicode";
+  font-style: italic;
+  font-display: swap;
+  font-weight: 700;
+  src: url("fonts/junicode-bolditalic.woff") format("woff");
+}

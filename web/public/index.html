@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>goose-ts</title>
+    <link rel="stylesheet" href="fonts.css" />
+    <link rel="stylesheet" href="style.css" />
+    <script>
+      // Applied synchronously, before first paint, to avoid a flash of the
+      // wrong theme. Kept inline+tiny rather than in app.js (a module
+      // script, which loads too late for this).
+      (function () {
+        var stored = localStorage.getItem("goose-ts-theme");
+        if (stored === "light" || stored === "dark") {
+          document.documentElement.setAttribute("data-theme", stored);
+        }
+      })();
+    </script>
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="brand">
+        <span class="brand-mark">🪿</span>
+        <span class="brand-name">goose-ts</span>
+        <span class="brand-tag">article extraction, poked at through a browser</span>
+      </div>
+      <div class="topbar-actions">
+        <button
+          class="theme-toggle"
+          id="theme-toggle"
+          type="button"
+          aria-label="Toggle light/dark theme"
+        >
+          <span class="theme-icon" aria-hidden="true">🌙</span>
+        </button>
+        <a
+          class="repo-link"
+          href="https://github.com/stliebl/goose-ts"
+          target="_blank"
+          rel="noreferrer"
+          >source</a
+        >
+      </div>
+    </header>
+
+    <main class="layout">
+      <section class="panel input-panel">
+        <div class="tabs" role="tablist">
+          <button class="tab active" data-tab="url" role="tab" aria-selected="true">URL</button>
+          <button class="tab" data-tab="html" role="tab" aria-selected="false">Paste HTML</button>
+        </div>
+
+        <div class="tab-content" data-tab-content="url">
+          <label class="field">
+            <span class="field-label">Page URL</span>
+            <input
+              type="url"
+              id="url-input"
+              placeholder="https://example.com/some-article"
+              autocomplete="off"
+            />
+          </label>
+          <div class="examples">
+            <span class="examples-label">Try:</span>
+            <button
+              class="example-chip"
+              type="button"
+              data-url="https://en.wikipedia.org/wiki/Web_scraping"
+            >
+              Wikipedia
+            </button>
+            <button class="example-chip" type="button" data-url="https://www.theverge.com/">
+              The Verge
+            </button>
+            <button class="example-chip" type="button" data-url="https://www.bbc.com/news">
+              BBC News
+            </button>
+          </div>
+        </div>
+
+        <div class="tab-content hidden" data-tab-content="html">
+          <label class="field">
+            <span class="field-label">Raw HTML</span>
+            <textarea id="html-input" rows="10" placeholder="<html>...</html>"></textarea>
+          </label>
+          <label class="field">
+            <span class="field-label"
+              >Base URL (optional, for resolving relative links/images)</span
+            >
+            <input type="url" id="html-url-input" placeholder="https://example.com/some-article" />
+          </label>
+        </div>
+
+        <details class="config" open>
+          <summary>Configuration</summary>
+          <div class="config-grid">
+            <label class="field checkbox">
+              <input type="checkbox" id="cfg-enable-images" checked />
+              <span>Fetch &amp; score images</span>
+            </label>
+            <label class="field checkbox">
+              <input type="checkbox" id="cfg-use-meta-language" checked />
+              <span>Prefer page's declared language</span>
+            </label>
+            <label class="field">
+              <span class="field-label">Target language</span>
+              <select id="cfg-target-language">
+                <option value="en" selected>en</option>
+                <option value="fr">fr</option>
+                <option value="de">de</option>
+                <option value="es">es</option>
+                <option value="it">it</option>
+                <option value="pt">pt</option>
+                <option value="nl">nl</option>
+                <option value="ru">ru</option>
+                <option value="pl">pl</option>
+                <option value="sv">sv</option>
+                <option value="da">da</option>
+                <option value="fi">fi</option>
+                <option value="id">id</option>
+                <option value="hu">hu</option>
+                <option value="ar">ar</option>
+                <option value="zh">zh</option>
+                <option value="ko">ko</option>
+              </select>
+            </label>
+            <label class="field">
+              <span class="field-label">HTTP timeout (ms)</span>
+              <input type="number" id="cfg-http-timeout" value="30000" min="1000" step="1000" />
+            </label>
+            <label class="field full">
+              <span class="field-label">User-Agent</span>
+              <input type="text" id="cfg-user-agent" placeholder="goose-ts/0.1.0" />
+            </label>
+          </div>
+        </details>
+
+        <button class="extract-btn" id="extract-btn" type="button">
+          <span class="btn-label">Extract</span>
+          <span class="spinner hidden" aria-hidden="true"></span>
+        </button>
+
+        <p class="error hidden" id="error-box"></p>
+      </section>
+
+      <section class="panel results-panel">
+        <div class="empty-state" id="empty-state">
+          <p>Nothing extracted yet.</p>
+          <p class="muted">Enter a URL or paste HTML, then hit Extract.</p>
+        </div>
+
+        <div class="results hidden" id="results">
+          <div class="status-bar" id="status-bar"></div>
+
+          <div class="result-grid">
+            <div class="result-main">
+              <h2 id="result-title"></h2>
+              <p class="byline" id="result-byline"></p>
+              <p class="description" id="result-description"></p>
+
+              <div class="chips" id="result-tags"></div>
+
+              <article class="article-text" id="result-text"></article>
+            </div>
+
+            <aside class="result-side">
+              <div class="image-card" id="image-card"></div>
+
+              <div class="side-section" id="meta-section">
+                <h3>Meta</h3>
+                <dl id="meta-list"></dl>
+              </div>
+
+              <div class="side-section" id="opengraph-section">
+                <h3>OpenGraph</h3>
+                <dl id="opengraph-list"></dl>
+              </div>
+
+              <details class="side-section">
+                <summary>Links (<span id="links-count">0</span>)</summary>
+                <ul id="links-list" class="scroll-list"></ul>
+              </details>
+
+              <details class="side-section">
+                <summary>Tweets (<span id="tweets-count">0</span>)</summary>
+                <ul id="tweets-list" class="scroll-list"></ul>
+              </details>
+
+              <details class="side-section">
+                <summary>Videos (<span id="movies-count">0</span>)</summary>
+                <ul id="movies-list" class="scroll-list"></ul>
+              </details>
+
+              <details class="side-section">
+                <summary>Raw JSON</summary>
+                <pre class="json-view" id="json-view"></pre>
+              </details>
+            </aside>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <script type="module" src="app.js"></script>
+  </body>
+</html>

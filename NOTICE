@@ -1,0 +1,33 @@
+goose-ts
+Copyright 2026 Sam Liebl
+
+This product is a TypeScript/Node.js port of "Goose", an article/content
+extraction library, and includes substantial code, algorithms, and test
+fixtures translated or adapted from earlier ports in this lineage:
+
+  - Goose (original)
+    Java, later Scala. Licensed to Gravity.com under one or more
+    contributor license agreements.
+    https://github.com/GravityLabs/goose
+
+  - python-goose
+    Python port written by Xavier Grangier for Recrutae.
+    https://github.com/grangier/python-goose
+    Stopword lists (src/resources/text/stopwords-*.txt), the known-image
+    CSS heuristics list (src/resources/images/known-image-css.txt), and
+    the HTML/JSON test fixtures under test/fixtures/ are carried over
+    from this project.
+
+  - node-unfluff
+    An earlier, independent JavaScript port/reimagining of goose's
+    heuristics for Node.js, written by Adam Geitgey. Consulted as prior
+    art and a reference for what a JS-idiomatic API can look like.
+    https://github.com/ageitgey/node-unfluff
+
+  - goose-ts (this project)
+    TypeScript/ESM port for modern Node.js, written by Sam Liebl with
+    Claude (Anthropic).
+    https://github.com/stliebl/goose-ts
+
+All of the above are licensed under the Apache License, Version 2.0.
+See the LICENSE file for the full license text.
