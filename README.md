@@ -91,8 +91,30 @@ const goose = new Goose({
   useMetaLanguage: true, // prefer the page's own declared language
   httpTimeout: 30_000, // ms
   browserUserAgent: "goose-ts/0.1.0",
+  enableJsonLdFallback: true, // see "Client-side-rendered pages" below (default true)
 });
 ```
+
+## Client-side-rendered pages
+
+Like python-goose, extraction is `fetch` + DOM parsing — there's no headless browser, so
+JavaScript never runs. On a page whose content is built entirely client-side (an empty SPA shell
+that fills itself in after load), the DOM-scoring extractor has nothing to score.
+
+As a fallback for exactly that case, goose-ts (not python-goose — this has no upstream fixtures,
+see `test/jsonLdFallback.test.ts`) checks for a `<script type="application/ld+json">` block with
+schema.org `Article`/`NewsArticle`/`BlogPosting` data. Publishers embed this HTML-side, for search
+engines and social-media previews, regardless of how the visible page renders — so it's often
+sitting right there in the initial response even when the DOM has nothing. It only kicks in when
+DOM extraction comes back with under ~250 characters of text, and never overrides a real
+DOM-scored result; set `enableJsonLdFallback: false` to turn it off entirely.
+
+This doesn't help with true SPAs that have no such metadata (there's no way around actually
+running the page's JavaScript for those), but it covers a meaningful slice of "client-side
+rendered" sites in practice — including ones whose framework does SSR its initial data as a JSON
+blob rather than an `application/ld+json` script (Next.js's `__NEXT_DATA__`, Nuxt's `__NUXT__`,
+etc.); that path isn't implemented (no fixed schema there, so it's a much fuzzier heuristic), but
+would slot in as an additional fallback in `src/Crawler.ts` alongside this one.
 
 Pass a `Configuration` instance, or a plain options object — both work.
 

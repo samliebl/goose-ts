@@ -268,6 +268,16 @@ export class Parser {
     return innerTrim(collectTextPieces(node).join(" ").trim());
   }
 
+  /**
+   * Raw, unmangled text content -- unlike getText, does not collapse
+   * whitespace or insert word-boundary spaces. Needed for content where
+   * whitespace is meaningful, like JSON inside a <script> tag.
+   */
+  getRawText(node: AnyNode): string {
+    if (!hasChildren(node)) return "";
+    return node.children.map((c) => (isText(c) ? c.data : "")).join("");
+  }
+
   previousSiblings(node: AnyNode): DomElement[] {
     const out: DomElement[] = [];
     let current = prevElementSibling(node as ChildNode);

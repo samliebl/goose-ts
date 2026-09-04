@@ -6,6 +6,7 @@ import { Parser } from "./dom/Parser.js";
 import { AuthorsExtractor } from "./extractors/AuthorsExtractor.js";
 import { ContentExtractor } from "./extractors/ContentExtractor.js";
 import { ImagesExtractor } from "./extractors/ImagesExtractor.js";
+import { JsonLdExtractor } from "./extractors/JsonLdExtractor.js";
 import { LinksExtractor } from "./extractors/LinksExtractor.js";
 import { MetasExtractor } from "./extractors/MetasExtractor.js";
 import { OpenGraphExtractor } from "./extractors/OpenGraphExtractor.js";
@@ -14,14 +15,24 @@ import { TagsExtractor } from "./extractors/TagsExtractor.js";
 import { TitleExtractor } from "./extractors/TitleExtractor.js";
 import { TweetsExtractor } from "./extractors/TweetsExtractor.js";
 import { VideosExtractor } from "./extractors/VideosExtractor.js";
+import { Image } from "./Image.js";
 import { HtmlFetcher } from "./Network.js";
 import { OutputFormatter } from "./OutputFormatter.js";
+import { ImageUtils } from "./utils/images.js";
 import { rawParsingCandidate, urlParsingCandidate, type ParsingCandidate } from "./utils/url.js";
 
 export interface CrawlCandidate {
   url?: string;
   rawHtml?: string;
 }
+
+/**
+ * Below this length, DOM-scored text isn't a real article result -- either
+ * ContentExtractor found no top node at all, or found one with barely
+ * anything in it. Below this bar, try the JSON-LD fallback (see
+ * JsonLdExtractor) instead of returning a near-empty article.
+ */
+const MIN_SUBSTANTIAL_TEXT_LENGTH = 250;
 
 /** Port of goose.crawler.Crawler -- orchestrates the full extraction pipeline. */
 export class Crawler {
@@ -88,7 +99,46 @@ export class Crawler {
       article.cleanedText = formatter.getFormattedText();
     }
 
+    if (
+      this.config.enableJsonLdFallback &&
+      article.cleanedText.trim().length < MIN_SUBSTANTIAL_TEXT_LENGTH
+    ) {
+      await this.applyJsonLdFallback(article, parser);
+    }
+
     return article;
+  }
+
+  private async applyJsonLdFallback(article: Article, parser: Parser): Promise<void> {
+    const jsonLd = new JsonLdExtractor(this.config, article, parser).extract();
+    if (!jsonLd?.text) return;
+
+    // We only get here when DOM-based extraction substantially failed, so
+    // JSON-LD wins outright wherever it has a value -- including title,
+    // which TitleExtractor always sets *something* for (its last resort is
+    // the raw <title> tag, which on a true CSR shell is commonly a
+    // placeholder like "Loading..." rather than the real headline).
+    article.cleanedText = jsonLd.text;
+    if (jsonLd.title) article.title = jsonLd.title;
+    if (jsonLd.description) article.metaDescription = jsonLd.description;
+    if (jsonLd.authors.length) article.authors = jsonLd.authors;
+    if (jsonLd.publishDate) article.publishDate = jsonLd.publishDate;
+    if (jsonLd.tags.length) article.tags = jsonLd.tags;
+
+    if (!article.topImage && jsonLd.imageUrl && this.config.enableImageFetching) {
+      const image = new Image();
+      image.src = jsonLd.imageUrl;
+      image.extractionType = "json-ld";
+      image.confidenceScore = 100;
+
+      const localImage = await ImageUtils.fetchImageInfo(jsonLd.imageUrl, this.config);
+      if (localImage) {
+        image.bytes = localImage.bytes;
+        image.height = localImage.height;
+        image.width = localImage.width;
+      }
+      article.topImage = image;
+    }
   }
 
   private getParseCandidate(candidate: CrawlCandidate): ParsingCandidate {

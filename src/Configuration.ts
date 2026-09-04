@@ -14,9 +14,17 @@ export interface ConfigurationOptions {
   browserUserAgent?: string;
   /** Timeout (ms) for outbound HTTP requests. Default 30000. */
   httpTimeout?: number;
+  /**
+   * goose-ts addition, not in python-goose: when DOM-based scoring finds
+   * little or nothing (see MIN_SUBSTANTIAL_TEXT_LENGTH in Crawler.ts) --
+   * most commonly on client-side-rendered pages, whose initial HTML has no
+   * article markup to score -- fall back to schema.org Article JSON-LD
+   * data if the page has it. Default true.
+   */
+  enableJsonLdFallback?: boolean;
 }
 
-/** Port of goose.configuration.Configuration. */
+/** Port of goose.configuration.Configuration, plus goose-ts-only additions (see field docs). */
 export class Configuration {
   enableImageFetching: boolean;
   useMetaLanguage: boolean;
@@ -24,6 +32,7 @@ export class Configuration {
   stopwordsClass: StopWordsClass;
   browserUserAgent: string;
   httpTimeout: number;
+  enableJsonLdFallback: boolean;
 
   constructor(options: ConfigurationOptions = {}) {
     this.enableImageFetching = options.enableImageFetching ?? true;
@@ -32,5 +41,6 @@ export class Configuration {
     this.stopwordsClass = options.stopwordsClass ?? StopWords;
     this.browserUserAgent = options.browserUserAgent ?? `goose-ts/${VERSION}`;
     this.httpTimeout = options.httpTimeout ?? 30_000;
+    this.enableJsonLdFallback = options.enableJsonLdFallback ?? true;
   }
 }
