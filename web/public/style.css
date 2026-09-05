@@ -57,6 +57,35 @@
   box-sizing: border-box;
 }
 
+/* One disclosure-triangle style for every <details> in the app (config,
+   sidebar sections, result rows) instead of a mix of the browser's native
+   marker and a custom one. */
+summary {
+  list-style: none;
+}
+
+summary::-webkit-details-marker {
+  display: none;
+}
+
+summary::before {
+  content: "";
+  display: inline-block;
+  vertical-align: middle;
+  width: 6px;
+  height: 6px;
+  margin-right: 10px;
+  margin-bottom: 2px;
+  border-right: 2px solid var(--text-muted);
+  border-bottom: 2px solid var(--text-muted);
+  transform: rotate(-45deg);
+  transition: transform 0.12s ease;
+}
+
+details[open] > summary::before {
+  transform: rotate(45deg);
+}
+
 body {
   margin: 0;
   background: var(--bg);
@@ -397,27 +426,16 @@ select:disabled {
 
 .result-item summary {
   display: flex;
-  align-items: center;
-  gap: 12px;
-  list-style: none;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 4px 12px;
   cursor: pointer;
   padding: 14px 16px;
 }
 
-.result-item summary::-webkit-details-marker {
-  display: none;
-}
-
 .result-item summary::before {
-  content: "▸";
-  color: var(--text-muted);
-  font-size: 12px;
   flex-shrink: 0;
-  transition: transform 0.1s ease;
-}
-
-.result-item[open] summary::before {
-  transform: rotate(90deg);
+  align-self: center;
 }
 
 .result-item-title {
@@ -426,8 +444,14 @@ select:disabled {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  flex: 1;
-  min-width: 0;
+  /* flex-basis and min-width both 160px, not the usual min-width: 0 --
+     the title is the one thing here that must never be squeezed away to
+     nothing. If the row is too narrow for title + status + toggle to sit
+     on one line, the wrap above sends the others to a second line instead
+     of shrinking the title into an unreadable sliver (or one character, as
+     happened on a longer URL before this fix). */
+  flex: 1 1 160px;
+  min-width: 160px;
 }
 
 .result-item-status {
@@ -436,6 +460,7 @@ select:disabled {
   font-size: 12px;
   white-space: nowrap;
   flex-shrink: 0;
+  margin-left: auto;
 }
 
 .result-item-status.bad {
@@ -476,11 +501,13 @@ select:disabled {
 }
 
 .side-heading {
-  margin: 0;
-  padding-bottom: 4px;
+  margin: 0 0 4px;
+  padding: 7px 11px;
+  border-radius: 6px;
+  background: var(--accent-soft);
   font-size: 13px;
   font-weight: 600;
-  color: var(--text-muted);
+  color: var(--accent);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;

@@ -448,12 +448,16 @@ function renderSidebar() {
   metaRow(metaList, "keywords", article?.meta?.keywords);
   metaRow(metaList, "canonical", article?.meta?.canonical);
   metaRow(metaList, "favicon", article?.meta?.favicon);
+  // A box with a heading and nothing else reads as broken, not "no data" --
+  // hide it outright rather than leave an empty gray card in the sidebar.
+  $("meta-section").classList.toggle("hidden", metaList.childElementCount === 0);
 
   const ogList = $("opengraph-list");
   clearChildren(ogList);
   for (const [key, value] of Object.entries(article?.opengraph ?? {})) {
     metaRow(ogList, key, value);
   }
+  $("opengraph-section").classList.toggle("hidden", ogList.childElementCount === 0);
 
   const links = article?.links ?? [];
   $("links-count").textContent = String(links.length);
