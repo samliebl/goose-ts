@@ -371,17 +371,119 @@ select:disabled {
   color: var(--good);
 }
 
-.result-grid {
+.status-bar .bad {
+  color: var(--bad);
+}
+
+.results-layout {
   display: grid;
   grid-template-columns: 1fr 320px;
   gap: 28px;
   align-items: start;
 }
 
-.result-main h2 {
-  margin: 0 0 6px;
-  font-size: 24px;
-  line-height: 1.3;
+.results-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+
+.result-item {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg-raised);
+}
+
+.result-item summary {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  list-style: none;
+  cursor: pointer;
+  padding: 14px 16px;
+}
+
+.result-item summary::-webkit-details-marker {
+  display: none;
+}
+
+.result-item summary::before {
+  content: "▸";
+  color: var(--text-muted);
+  font-size: 12px;
+  flex-shrink: 0;
+  transition: transform 0.1s ease;
+}
+
+.result-item[open] summary::before {
+  transform: rotate(90deg);
+}
+
+.result-item-title {
+  font-size: 16px;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+  min-width: 0;
+}
+
+.result-item-status {
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.result-item-status.bad {
+  color: var(--bad);
+}
+
+.meta-toggle {
+  flex-shrink: 0;
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  border-radius: 6px;
+  padding: 4px 10px;
+  font-size: 12px;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.meta-toggle:hover {
+  border-color: var(--accent);
+  color: var(--text);
+}
+
+.meta-toggle[aria-pressed="true"] {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.result-item-body {
+  padding: 0 16px 16px;
+  border-top: 1px solid var(--border);
+  padding-top: 14px;
+}
+
+.result-item-body .error {
+  margin: 0;
+}
+
+.side-heading {
+  margin: 0;
+  padding-bottom: 4px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .byline {
@@ -543,7 +645,7 @@ dl dd {
     border-right: none;
     border-bottom: 1px solid var(--border);
   }
-  .result-grid {
+  .results-layout {
     grid-template-columns: 1fr;
   }
 }

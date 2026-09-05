@@ -53,13 +53,17 @@
 
         <div class="tab-content" data-tab-content="url">
           <label class="field">
-            <span class="field-label">Page URL</span>
-            <input
-              type="url"
+            <span class="field-label">Page URL(s)</span>
+            <textarea
               id="url-input"
-              placeholder="https://example.com/some-article"
+              rows="4"
+              placeholder="https://example.com/some-article&#10;https://example.com/another-article"
               autocomplete="off"
-            />
+            ></textarea>
+            <span class="field-hint"
+              >One per line. Extracted one at a time, in order (never in parallel) so a batch never
+              looks like a burst of scraper traffic to any one site. ⌘/Ctrl+Enter to run.</span
+            >
           </label>
         </div>
 
@@ -141,18 +145,12 @@
         <div class="results hidden" id="results">
           <div class="status-bar" id="status-bar"></div>
 
-          <div class="result-grid">
-            <div class="result-main">
-              <h2 id="result-title"></h2>
-              <p class="byline" id="result-byline"></p>
-              <p class="description" id="result-description"></p>
-
-              <div class="chips" id="result-tags"></div>
-
-              <article class="article-text" id="result-text"></article>
-            </div>
+          <div class="results-layout">
+            <div class="results-list" id="results-list"></div>
 
             <aside class="result-side">
+              <p class="side-heading hidden" id="side-heading"></p>
+
               <div class="image-card" id="image-card"></div>
 
               <div class="side-section" id="meta-section">

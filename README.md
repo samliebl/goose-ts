@@ -41,6 +41,13 @@ A small local dashboard for poking at extraction interactively — URL or pasted
 `Configuration` option exposed, and the full result (image, meta, OpenGraph, links, tweets,
 videos, raw JSON) rendered side by side.
 
+The URL field takes multiple URLs, one per line. They're extracted **sequentially, never in
+parallel** — each request finishes before the next starts, so a batch never looks like a burst of
+concurrent traffic to any one site. Each result appears as a collapsed `<details>` row (title in
+the summary; a single result stays expanded, same as before); a "Metadata" toggle on each
+successful row — acting like a radio group, one at a time, defaulting to the first successful
+result — selects which article's links/tweets/OpenGraph/JSON the sidebar shows.
+
 ```bash
 npm install
 npm run web   # -> http://127.0.0.1:4173
@@ -161,3 +168,10 @@ npm run build    # tsup -> dist/
 npm run typecheck
 npm run lint
 ```
+
+---
+
+## Ideas
+
+Some ideas for future features.
+
