@@ -203,6 +203,12 @@ body {
   letter-spacing: 0.04em;
 }
 
+.field-hint {
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
 input[type="url"],
 input[type="text"],
 input[type="number"],
@@ -229,33 +235,9 @@ select:focus {
   border-color: var(--accent);
 }
 
-.examples {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
-  margin-top: 2px;
-}
-
-.examples-label {
-  color: var(--text-muted);
-  font-size: 13px;
-}
-
-.example-chip {
-  background: var(--bg-raised);
-  border: 1px solid var(--border);
-  color: var(--text-muted);
-  border-radius: 999px;
-  padding: 4px 11px;
-  font-size: 13px;
-  cursor: pointer;
-  font-family: inherit;
-}
-
-.example-chip:hover {
-  color: var(--accent);
-  border-color: var(--accent);
+select:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .config {
@@ -308,7 +290,10 @@ select:focus {
   justify-content: center;
   gap: 8px;
   background: var(--accent);
-  color: #0d1117;
+  /* Fixed white, not a theme token: the button's own background is always
+     the same mid-tone blue regardless of light/dark theme, so the text
+     color that contrasts against it doesn't need to change either. */
+  color: #ffffff;
   border: none;
   border-radius: 8px;
   padding: 11px 16px;
@@ -329,8 +314,8 @@ select:focus {
 .spinner {
   width: 14px;
   height: 14px;
-  border: 2px solid rgba(13, 17, 23, 0.35);
-  border-top-color: #0d1117;
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  border-top-color: #ffffff;
   border-radius: 50%;
   animation: spin 0.7s linear infinite;
 }
@@ -429,11 +414,18 @@ select:focus {
 
 .article-text {
   font-family: var(--font-serif);
-  font-size: 18px;
-  line-height: 1.7;
+  font-size: 16px;
+  line-height: 1.55;
   color: var(--text);
-  white-space: pre-wrap;
-  max-width: 68ch;
+  max-width: 78ch;
+}
+
+.article-text p {
+  margin: 0 0 0.8em;
+}
+
+.article-text p:last-child {
+  margin-bottom: 0;
 }
 
 .result-side {

@@ -61,22 +61,6 @@
               autocomplete="off"
             />
           </label>
-          <div class="examples">
-            <span class="examples-label">Try:</span>
-            <button
-              class="example-chip"
-              type="button"
-              data-url="https://en.wikipedia.org/wiki/Web_scraping"
-            >
-              Wikipedia
-            </button>
-            <button class="example-chip" type="button" data-url="https://www.theverge.com/">
-              The Verge
-            </button>
-            <button class="example-chip" type="button" data-url="https://www.bbc.com/news">
-              BBC News
-            </button>
-          </div>
         </div>
 
         <div class="tab-content hidden" data-tab-content="html">
@@ -124,6 +108,10 @@
                 <option value="zh">zh</option>
                 <option value="ko">ko</option>
               </select>
+              <span class="field-hint" id="target-language-hint"
+                >Only used when the page has no declared language, or "prefer page's declared
+                language" is off.</span
+              >
             </label>
             <label class="field">
               <span class="field-label">HTTP timeout (ms)</span>

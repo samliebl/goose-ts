@@ -58,11 +58,20 @@ for (const tab of document.querySelectorAll(".tab")) {
   });
 }
 
-for (const chip of document.querySelectorAll(".example-chip")) {
-  chip.addEventListener("click", () => {
-    urlInput.value = chip.dataset.url;
-  });
+// targetLanguage is only ever consulted as a fallback (see
+// Configuration/BaseExtractor.getLanguage) when useMetaLanguage is off, or
+// the page has no detectable language -- so the select does nothing while
+// "prefer page's declared language" is checked. Disabling it makes that
+// dependency visible instead of a silently-ignored dropdown.
+const useMetaLanguageCheckbox = $("cfg-use-meta-language");
+const targetLanguageSelect = $("cfg-target-language");
+
+function syncTargetLanguageAvailability() {
+  targetLanguageSelect.disabled = useMetaLanguageCheckbox.checked;
 }
+
+useMetaLanguageCheckbox.addEventListener("change", syncTargetLanguageAvailability);
+syncTargetLanguageAvailability();
 
 function readConfig() {
   return {
@@ -198,7 +207,20 @@ function renderResults(article, elapsedMs, requestedUrl) {
   clearChildren(tagsBox);
   for (const tag of article.tags ?? []) tagsBox.append(chip(tag));
 
-  $("result-text").textContent = article.cleanedText || "(no article text extracted)";
+  const textBox = $("result-text");
+  clearChildren(textBox);
+  const paragraphs = article.cleanedText ? article.cleanedText.split("\n\n") : [];
+  if (paragraphs.length === 0) {
+    const p = document.createElement("p");
+    p.textContent = "(no article text extracted)";
+    textBox.append(p);
+  } else {
+    for (const paragraph of paragraphs) {
+      const p = document.createElement("p");
+      p.textContent = paragraph;
+      textBox.append(p);
+    }
+  }
 
   const imageCard = $("image-card");
   clearChildren(imageCard);
