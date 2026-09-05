@@ -142,7 +142,23 @@ async function extract() {
 
     renderResults(payload.article, payload.elapsedMs, (body.url ?? body.rawHtml) ? body.url : "");
   } catch (err) {
-    showError(err instanceof Error ? err.message : String(err));
+    // Browsers throw TypeError specifically for a fetch that never got a
+    // response at all ("Failed to fetch" in Chrome, "NetworkError..." in
+    // Firefox, "Load failed" in Safari) -- as opposed to a request that
+    // reached the server and came back with an HTTP error, which is
+    // already handled above. This almost always means the browser itself
+    // couldn't reach this page's own server, not that extraction failed --
+    // e.g. an embedded/sandboxed browser view that blocks requests to
+    // localhost, or the "npm run web" process having been stopped.
+    if (err instanceof TypeError) {
+      showError(
+        `Could not reach the local server at ${window.location.origin}. Make sure "npm run web" ` +
+          `is still running. If you're viewing this page inside an embedded or sandboxed browser ` +
+          `view, it may be blocking requests to localhost -- try a regular browser tab instead.`,
+      );
+    } else {
+      showError(err instanceof Error ? err.message : String(err));
+    }
   } finally {
     setLoading(false);
   }

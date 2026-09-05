@@ -30,6 +30,23 @@ app.post("/api/extract", async (req, res) => {
     const config = new Configuration(body.config ?? {});
     const goose = new Goose(config);
     const article = await goose.extract({ url: body.url, rawHtml: body.rawHtml });
+
+    // HtmlFetcher swallows fetch errors and returns null rather than
+    // throwing (faithful to python-goose's HtmlFetcher, which does the
+    // same) -- Crawler then just returns an empty Article, with no
+    // exception for this catch block to report. `additionalData.response`
+    // is null only on that path, so check it explicitly to tell "the URL
+    // itself couldn't be fetched" apart from "fetched fine, but there was
+    // nothing worth extracting."
+    if (body.url && !body.rawHtml && article.additionalData["response"] == null) {
+      res.status(502).json({
+        ok: false,
+        elapsedMs: Math.round(performance.now() - started),
+        error: `Could not fetch ${body.url} (DNS failure, connection refused, TLS error, or timeout after ${config.httpTimeout}ms). The target site itself may be blocking this request's User-Agent -- try customizing it below.`,
+      });
+      return;
+    }
+
     res.json({
       ok: true,
       elapsedMs: Math.round(performance.now() - started),
