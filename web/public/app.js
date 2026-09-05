@@ -1,7 +1,7 @@
 // All extracted content comes from arbitrary, untrusted web pages. Every
 // value that originates from `article` is inserted via textContent (or as
-// a safe attribute like <img src>), never innerHTML -- see renderResultItem
-// and renderSidebar.
+// a safe attribute like <img src>), never innerHTML -- see appendResultItem
+// and buildMetadataBlock.
 
 const $ = (id) => document.getElementById(id);
 
@@ -45,7 +45,22 @@ const emptyState = $("empty-state");
 const results = $("results");
 const resultsList = $("results-list");
 const statusBar = $("status-bar");
+const resultSide = $("result-side");
 const sideHeading = $("side-heading");
+const sidebarMetadata = $("sidebar-metadata");
+
+// Matches the `max-width: 900px` breakpoint in style.css that stacks
+// .results-layout to one column. Above it there's room for a persistent
+// metadata side column with a toggle per result; at or below it, each
+// result instead carries its own metadata inline (see appendResultItem) --
+// a separate "which one is showing" toggle isn't usable once the panel it
+// affects has scrolled off to who-knows-where on a phone-sized screen.
+const DESKTOP_SIDEBAR_BREAKPOINT = 900;
+function isDesktopLayout() {
+  return window.innerWidth > DESKTOP_SIDEBAR_BREAKPOINT;
+}
+/** Which layout the current batch was rendered for -- set once per Extract click. */
+let desktopLayout = isDesktopLayout();
 
 let activeTab = "url";
 
@@ -201,6 +216,10 @@ async function runOne(job) {
 async function runBatch(jobs) {
   currentResults = [];
   selectedIndex = null;
+  // Decided once per batch, not re-checked on resize -- a local dev tool
+  // doesn't need to reflow already-rendered results if the window changes
+  // width mid-session; re-running Extract picks up the current layout.
+  desktopLayout = isDesktopLayout();
   emptyState.classList.add("hidden");
   results.classList.remove("hidden");
   clearChildren(resultsList);
@@ -335,7 +354,8 @@ function appendResultItem(item, index, isBatch) {
 
   // Only meaningful (and only shown) once there's more than one result --
   // with a single result the sidebar always shows that one, same as before.
-  if (isBatch && item.ok) {
+  // And only on the desktop layout -- see appendResultItem's other branch.
+  if (desktopLayout && isBatch && item.ok) {
     const toggle = document.createElement("button");
     toggle.type = "button";
     toggle.className = "meta-toggle";
@@ -409,14 +429,135 @@ function appendResultItem(item, index, isBatch) {
       }
     }
     body.append(textBox);
+
+    // No room for a persistent side column below the desktop breakpoint --
+    // each result carries its own metadata inline instead, right where
+    // it's easy to find, collapsed by default so it doesn't compete with
+    // the article text for attention.
+    if (!desktopLayout) {
+      const metaDetails = document.createElement("details");
+      metaDetails.className = "item-metadata";
+      const metaSummary = document.createElement("summary");
+      metaSummary.textContent = "Metadata";
+      metaDetails.append(metaSummary, buildMetadataBlock(article));
+      body.append(metaDetails);
+    }
   }
 
   details.append(body);
   resultsList.append(details);
 }
 
-/** Renders the persistent sidebar for whichever result is currently selected. */
+/** One labeled box (Meta, OpenGraph) holding an already-built element. */
+function sideSection(heading, contentEl) {
+  const section = document.createElement("div");
+  section.className = "side-section";
+  const h3 = document.createElement("h3");
+  h3.textContent = heading;
+  section.append(h3, contentEl);
+  return section;
+}
+
+/** One collapsed <details> box holding a count and a list of rendered items. */
+function scrollListDetails(label, items, renderItem) {
+  const details = document.createElement("details");
+  details.className = "side-section";
+  const summary = document.createElement("summary");
+  summary.textContent = `${label} (${items.length})`;
+  const list = document.createElement("ul");
+  list.className = "scroll-list";
+  for (const value of items) {
+    const li = document.createElement("li");
+    li.append(renderItem(value));
+    list.append(li);
+  }
+  details.append(summary, list);
+  return details;
+}
+
+/**
+ * Builds one article's full metadata display (image, meta, OpenGraph,
+ * links, tweets, videos, raw JSON) as a standalone element. Used both for
+ * the desktop sidebar (one at a time, picked with the "Metadata" toggle)
+ * and, below the desktop breakpoint, once per result inline -- see
+ * appendResultItem and renderSidebar.
+ */
+function buildMetadataBlock(article) {
+  const wrap = document.createElement("div");
+  wrap.className = "metadata-block";
+
+  if (article?.image?.url) {
+    const imageCard = document.createElement("div");
+    imageCard.className = "image-card";
+    const img = document.createElement("img");
+    img.src = article.image.url;
+    img.alt = article.title || "article image";
+    img.loading = "lazy";
+    const meta = document.createElement("div");
+    meta.className = "image-meta";
+    meta.textContent = `${article.image.width}×${article.image.height}`;
+    imageCard.append(img, meta);
+    wrap.append(imageCard);
+  }
+
+  const metaList = document.createElement("dl");
+  metaRow(metaList, "lang", article?.meta?.lang);
+  metaRow(metaList, "keywords", article?.meta?.keywords);
+  metaRow(metaList, "canonical", article?.meta?.canonical);
+  metaRow(metaList, "favicon", article?.meta?.favicon);
+  // A box with a heading and nothing else reads as broken, not "no data" --
+  // leave it out entirely rather than show an empty gray card.
+  if (metaList.childElementCount > 0) wrap.append(sideSection("Meta", metaList));
+
+  const ogList = document.createElement("dl");
+  for (const [key, value] of Object.entries(article?.opengraph ?? {})) {
+    metaRow(ogList, key, value);
+  }
+  if (ogList.childElementCount > 0) wrap.append(sideSection("OpenGraph", ogList));
+
+  wrap.append(
+    scrollListDetails("Links", article?.links ?? [], (href) => document.createTextNode(href)),
+  );
+  wrap.append(
+    scrollListDetails("Tweets", article?.tweets ?? [], (tweetHtml) => {
+      const code = document.createElement("code");
+      code.textContent = tweetHtml; // escaped text, not rendered as live HTML
+      return code;
+    }),
+  );
+  wrap.append(
+    scrollListDetails("Videos", article?.movies ?? [], (movie) => {
+      const frag = document.createDocumentFragment();
+      const summary = document.createElement("div");
+      summary.textContent = `${movie.provider ?? "unknown"} · ${movie.embedType ?? ""} · ${movie.width ?? "?"}×${movie.height ?? "?"}`;
+      const code = document.createElement("code");
+      code.textContent = movie.embedCode ?? movie.src ?? "";
+      frag.append(summary, code);
+      return frag;
+    }),
+  );
+
+  const jsonDetails = document.createElement("details");
+  jsonDetails.className = "side-section";
+  const jsonSummary = document.createElement("summary");
+  jsonSummary.textContent = "Raw JSON";
+  const jsonPre = document.createElement("pre");
+  jsonPre.className = "json-view";
+  jsonPre.textContent = article ? JSON.stringify(article, null, 2) : "";
+  jsonDetails.append(jsonSummary, jsonPre);
+  wrap.append(jsonDetails);
+
+  return wrap;
+}
+
+/** Renders the persistent sidebar for whichever result is currently selected -- desktop layout only. */
 function renderSidebar() {
+  if (!desktopLayout) {
+    resultSide.classList.add("hidden");
+    return;
+  }
+  resultSide.classList.remove("hidden");
+
   const item = selectedIndex !== null ? currentResults[selectedIndex] : undefined;
   const isBatch = currentResults.length > 1;
 
@@ -427,73 +568,6 @@ function renderSidebar() {
       : "No metadata (fetch failed)";
   }
 
-  const article = item?.ok ? item.article : undefined;
-
-  const imageCard = $("image-card");
-  clearChildren(imageCard);
-  if (article?.image?.url) {
-    const img = document.createElement("img");
-    img.src = article.image.url;
-    img.alt = article.title || "article image";
-    img.loading = "lazy";
-    const meta = document.createElement("div");
-    meta.className = "image-meta";
-    meta.textContent = `${article.image.width}×${article.image.height}`;
-    imageCard.append(img, meta);
-  }
-
-  const metaList = $("meta-list");
-  clearChildren(metaList);
-  metaRow(metaList, "lang", article?.meta?.lang);
-  metaRow(metaList, "keywords", article?.meta?.keywords);
-  metaRow(metaList, "canonical", article?.meta?.canonical);
-  metaRow(metaList, "favicon", article?.meta?.favicon);
-  // A box with a heading and nothing else reads as broken, not "no data" --
-  // hide it outright rather than leave an empty gray card in the sidebar.
-  $("meta-section").classList.toggle("hidden", metaList.childElementCount === 0);
-
-  const ogList = $("opengraph-list");
-  clearChildren(ogList);
-  for (const [key, value] of Object.entries(article?.opengraph ?? {})) {
-    metaRow(ogList, key, value);
-  }
-  $("opengraph-section").classList.toggle("hidden", ogList.childElementCount === 0);
-
-  const links = article?.links ?? [];
-  $("links-count").textContent = String(links.length);
-  const linksList = $("links-list");
-  clearChildren(linksList);
-  for (const href of links) {
-    const li = document.createElement("li");
-    li.textContent = href;
-    linksList.append(li);
-  }
-
-  const tweets = article?.tweets ?? [];
-  $("tweets-count").textContent = String(tweets.length);
-  const tweetsList = $("tweets-list");
-  clearChildren(tweetsList);
-  for (const tweetHtml of tweets) {
-    const li = document.createElement("li");
-    const code = document.createElement("code");
-    code.textContent = tweetHtml; // escaped text, not rendered as live HTML
-    li.append(code);
-    tweetsList.append(li);
-  }
-
-  const movies = article?.movies ?? [];
-  $("movies-count").textContent = String(movies.length);
-  const moviesList = $("movies-list");
-  clearChildren(moviesList);
-  for (const movie of movies) {
-    const li = document.createElement("li");
-    const summary = document.createElement("div");
-    summary.textContent = `${movie.provider ?? "unknown"} · ${movie.embedType ?? ""} · ${movie.width ?? "?"}×${movie.height ?? "?"}`;
-    const code = document.createElement("code");
-    code.textContent = movie.embedCode ?? movie.src ?? "";
-    li.append(summary, code);
-    moviesList.append(li);
-  }
-
-  $("json-view").textContent = article ? JSON.stringify(article, null, 2) : "";
+  clearChildren(sidebarMetadata);
+  sidebarMetadata.append(buildMetadataBlock(item?.ok ? item.article : undefined));
 }

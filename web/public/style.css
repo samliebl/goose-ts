@@ -277,9 +277,17 @@ select:disabled {
 
 .config summary {
   cursor: pointer;
-  padding: 10px 0;
+  padding: 12px 0;
   font-size: 14px;
-  color: var(--text-muted);
+  font-weight: 600;
+  /* Full text color, not muted -- this is the whole point of contact for a
+     section that's collapsed by default now, so it should read as an
+     available control, not something greyed-out/disabled. */
+  color: var(--text);
+}
+
+.config summary:hover {
+  color: var(--accent);
 }
 
 .config-grid {
@@ -500,6 +508,30 @@ select:disabled {
   margin: 0;
 }
 
+/* Below the desktop breakpoint, each result carries its own metadata inline
+   (see appendResultItem in app.js) instead of the shared side column. */
+.item-metadata {
+  margin-top: 16px;
+  border-top: 1px dashed var(--border);
+  padding-top: 12px;
+}
+
+.item-metadata summary {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.item-metadata .metadata-block {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 12px;
+}
+
 .side-heading {
   margin: 0 0 4px;
   padding: 7px 11px;
@@ -674,5 +706,36 @@ dl dd {
   }
   .results-layout {
     grid-template-columns: 1fr;
+  }
+}
+
+/* Phone-sized: tighter type and spacing throughout, and the header sheds
+   its subtitle -- nothing here changes structure (that already happened at
+   900px above), just density. */
+@media (max-width: 640px) {
+  .topbar {
+    padding: 12px 16px;
+  }
+  .brand-tag {
+    display: none;
+  }
+  .panel {
+    padding: 16px;
+  }
+  .config-grid {
+    grid-template-columns: 1fr;
+  }
+  .result-item summary {
+    padding: 12px 14px;
+  }
+  .result-item-title {
+    font-size: 15px;
+  }
+  .result-item-body {
+    padding: 0 14px 14px;
+    padding-top: 12px;
+  }
+  .article-text {
+    font-size: 15px;
   }
 }

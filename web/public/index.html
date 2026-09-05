@@ -80,7 +80,7 @@
           </label>
         </div>
 
-        <details class="config" open>
+        <details class="config">
           <summary>Configuration</summary>
           <div class="config-grid">
             <label class="field checkbox">
@@ -148,40 +148,13 @@
           <div class="results-layout">
             <div class="results-list" id="results-list"></div>
 
-            <aside class="result-side">
+            <!-- Populated (and shown/hidden) from app.js: on a wide window this holds
+                 whichever result's "Metadata" toggle is selected; below that width there's
+                 no room for a side column, so each result carries its own metadata inline
+                 instead and this stays empty/hidden. -->
+            <aside class="result-side hidden" id="result-side">
               <p class="side-heading hidden" id="side-heading"></p>
-
-              <div class="image-card" id="image-card"></div>
-
-              <div class="side-section" id="meta-section">
-                <h3>Meta</h3>
-                <dl id="meta-list"></dl>
-              </div>
-
-              <div class="side-section" id="opengraph-section">
-                <h3>OpenGraph</h3>
-                <dl id="opengraph-list"></dl>
-              </div>
-
-              <details class="side-section">
-                <summary>Links (<span id="links-count">0</span>)</summary>
-                <ul id="links-list" class="scroll-list"></ul>
-              </details>
-
-              <details class="side-section">
-                <summary>Tweets (<span id="tweets-count">0</span>)</summary>
-                <ul id="tweets-list" class="scroll-list"></ul>
-              </details>
-
-              <details class="side-section">
-                <summary>Videos (<span id="movies-count">0</span>)</summary>
-                <ul id="movies-list" class="scroll-list"></ul>
-              </details>
-
-              <details class="side-section">
-                <summary>Raw JSON</summary>
-                <pre class="json-view" id="json-view"></pre>
-              </details>
+              <div id="sidebar-metadata"></div>
             </aside>
           </div>
         </div>

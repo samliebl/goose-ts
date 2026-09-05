@@ -44,9 +44,15 @@ videos, raw JSON) rendered side by side.
 The URL field takes multiple URLs, one per line. They're extracted **sequentially, never in
 parallel** — each request finishes before the next starts, so a batch never looks like a burst of
 concurrent traffic to any one site. Each result appears as a collapsed `<details>` row (title in
-the summary; a single result stays expanded, same as before); a "Metadata" toggle on each
-successful row — acting like a radio group, one at a time, defaulting to the first successful
-result — selects which article's links/tweets/OpenGraph/JSON the sidebar shows.
+the summary; a single result stays expanded, same as before). `Configuration` is collapsed by
+default, keeping the results themselves the focus.
+
+Above ~900px wide there's room for a persistent metadata side panel: a "Metadata" toggle on each
+successful row (acting like a radio group, one at a time, defaulting to the first successful
+result) selects which article's links/tweets/OpenGraph/JSON it shows. Below that width -- where a
+side column doesn't fit, and a distant panel you have to scroll back up to reach isn't usable
+anyway -- each result instead carries its own metadata inline, nested and collapsed under its own
+text. Below ~640px, type and spacing tighten further for phone-sized screens.
 
 ```bash
 npm install
@@ -174,4 +180,3 @@ npm run lint
 ## Ideas
 
 Some ideas for future features.
-
