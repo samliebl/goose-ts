@@ -45,6 +45,7 @@ const emptyState = $("empty-state");
 const results = $("results");
 const resultsList = $("results-list");
 const statusBar = $("status-bar");
+const resultsLayout = $("results-layout");
 const resultSide = $("result-side");
 const sideHeading = $("side-heading");
 const sidebarMetadata = $("sidebar-metadata");
@@ -216,9 +217,8 @@ async function runOne(job) {
 async function runBatch(jobs) {
   currentResults = [];
   selectedIndex = null;
-  // Decided once per batch, not re-checked on resize -- a local dev tool
-  // doesn't need to reflow already-rendered results if the window changes
-  // width mid-session; re-running Extract picks up the current layout.
+  // Also re-decided on resize if the breakpoint is actually crossed
+  // afterward -- see the resize listener below.
   desktopLayout = isDesktopLayout();
   emptyState.classList.add("hidden");
   results.classList.remove("hidden");
@@ -276,6 +276,23 @@ urlInput.addEventListener("keydown", (e) => {
   }
 });
 
+// Whether to show the sidebar+toggle or inline-per-result metadata is
+// decided once per Extract (see `desktopLayout`), not on every resize --
+// re-fetching nothing costs nothing, so if the window is dragged across the
+// breakpoint afterward, bring the already-fetched results along instead of
+// leaving them stuck in whichever mode they were built for.
+let resizeRerenderTimer = null;
+window.addEventListener("resize", () => {
+  window.clearTimeout(resizeRerenderTimer);
+  resizeRerenderTimer = window.setTimeout(() => {
+    if (currentResults.length === 0) return;
+    const nowDesktop = isDesktopLayout();
+    if (nowDesktop === desktopLayout) return; // breakpoint wasn't actually crossed
+    desktopLayout = nowDesktop;
+    renderAllResults();
+  }, 150);
+});
+
 function chip(text) {
   const span = document.createElement("span");
   span.className = "chip";
@@ -327,6 +344,14 @@ function renderStatusBar(items) {
     urlSpan.textContent = items[0].label;
     statusBar.append(urlSpan);
   }
+}
+
+/** Rebuilds the whole results list + sidebar from currentResults -- no fetching, just re-rendering (used after a resize crosses the desktop breakpoint). */
+function renderAllResults() {
+  clearChildren(resultsList);
+  const isBatch = currentResults.length > 1;
+  currentResults.forEach((item, i) => appendResultItem(item, i, isBatch));
+  renderSidebar();
 }
 
 /** Builds and appends one <details> for a single extraction result. */
@@ -552,6 +577,10 @@ function buildMetadataBlock(article) {
 
 /** Renders the persistent sidebar for whichever result is currently selected -- desktop layout only. */
 function renderSidebar() {
+  // Drives the grid's column count directly, rather than leaving it to the
+  // CSS breakpoint alone -- see the .single-column comment in style.css.
+  resultsLayout.classList.toggle("single-column", !desktopLayout);
+
   if (!desktopLayout) {
     resultSide.classList.add("hidden");
     return;

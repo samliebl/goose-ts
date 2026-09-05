@@ -419,6 +419,18 @@ select:disabled {
   align-items: start;
 }
 
+/* app.js adds this whenever it decides not to show the sidebar (see
+   renderSidebar). Needed as its own rule, not just the @media block below:
+   grid-template-columns defines tracks on the *container*, so hiding the
+   sidebar element with display:none does not on its own free up the 320px
+   track it would have sat in -- app.js's decision (made once per Extract,
+   see `desktopLayout`) and the live viewport width can disagree after a
+   resize, and without this, that disagreement left a reserved-but-empty
+   320px gap on screen with the results list squeezed into what remained. */
+.results-layout.single-column {
+  grid-template-columns: 1fr;
+}
+
 .results-list {
   display: flex;
   flex-direction: column;
