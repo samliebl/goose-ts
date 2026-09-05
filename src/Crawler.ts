@@ -153,6 +153,25 @@ export class Crawler {
     const fetcher = new HtmlFetcher(this.config);
     const html = await fetcher.getHtml(candidate.url);
     article.additionalData = { request: fetcher.request, response: fetcher.response };
+
+    if (html === null) {
+      article.fetchError = fetcher.response
+        ? `HTTP ${fetcher.response.status} ${fetcher.response.statusText}`.trim()
+        : describeNetworkError(fetcher.error);
+    }
+
     return html;
   }
+}
+
+function describeNetworkError(error: unknown): string {
+  if (
+    error &&
+    typeof error === "object" &&
+    "message" in error &&
+    typeof error.message === "string"
+  ) {
+    return error.message;
+  }
+  return "network error";
 }

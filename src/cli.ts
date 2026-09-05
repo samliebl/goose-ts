@@ -39,6 +39,21 @@ async function main(): Promise<void> {
     ? await goose.extract({ rawHtml: await readFile(values.file, "utf-8") })
     : await goose.extract({ url: positionals[0] });
 
+  // HtmlFetcher swallows fetch errors and returns null rather than
+  // throwing (faithful to python-goose's own HtmlFetcher), so Goose.extract
+  // returns a normal-looking but empty Article rather than rejecting.
+  // article.fetchError is set only on that path (network failure OR a
+  // non-2xx status, e.g. a 403 from anti-bot protection) -- check it
+  // explicitly so a fetch failure prints a clear error instead of silently
+  // emitting an empty result indistinguishable from "found nothing".
+  if (article.fetchError) {
+    console.error(
+      `Could not fetch ${positionals[0]}: ${article.fetchError}. If this is a non-2xx status, the site may be blocking this request's User-Agent -- try --help for options.`,
+    );
+    process.exitCode = 1;
+    return;
+  }
+
   if (values.text) {
     console.log(article.cleanedText);
     return;

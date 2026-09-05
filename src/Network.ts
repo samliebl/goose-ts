@@ -17,6 +17,8 @@ function detectCharset(contentType: string | null, buffer: Buffer): string {
 export class HtmlFetcher {
   request: Request | null = null;
   response: Response | null = null;
+  /** Set only when the network request itself failed (DNS, connection, TLS, timeout). */
+  error: unknown = null;
 
   constructor(private readonly config: Configuration) {}
 
@@ -29,8 +31,9 @@ export class HtmlFetcher {
       this.response = await fetch(this.request, {
         signal: AbortSignal.timeout(this.config.httpTimeout),
       });
-    } catch {
+    } catch (err) {
       this.response = null;
+      this.error = err;
       return null;
     }
 

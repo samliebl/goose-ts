@@ -132,6 +132,7 @@ A few things were deliberately modernized rather than ported 1:1:
 - **Arabic segmentation**: plain word tokenization instead of `nltk`'s ISRI stemmer — an approximation, not a full port (see `src/text.ts`).
 - **Korean stopword scoring**: python-goose's `StopWordsKorean.get_stopword_count` has a bug (it counts every stopword for every candidate word, not just overlapping ones). Reproduced as-is for output parity, not "fixed" — see `src/text.ts`.
 - Dropped entirely: the `lxml`/`BeautifulSoup` parser-fallback switch (cheerio's parser is lenient enough not to need it), and a few config fields that were dead code upstream (`extract_publishdate`, `additional_data_extractor`).
+- **`article.fetchError`**: python-goose's `HtmlFetcher` silently swallows a failed page fetch (network error, or a non-2xx status like a 403 from anti-bot protection) and returns `None`, so `Goose().extract()` comes back with an `Article` that's just empty in every field — indistinguishable from "fetched fine, found nothing." We keep that same silent behavior in `Crawler`/`HtmlFetcher` for fidelity, but additionally set `article.fetchError` (a plain string, `null` when the fetch succeeded or wasn't used) so a caller — the CLI and the web dashboard both check this — can tell the two apart and say so, instead of quietly reporting success.
 
 ## Credits
 

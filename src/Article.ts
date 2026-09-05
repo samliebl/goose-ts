@@ -55,6 +55,15 @@ export class Article {
   rawDoc: DomElement | null = null;
   publishDate: string | null = null;
   additionalData: Record<string, unknown> = {};
+  /**
+   * goose-ts addition, not in python-goose: set when a url-based extract()
+   * couldn't fetch the page at all (network error, or a non-2xx HTTP
+   * status), so callers can distinguish "the fetch failed" from "fetched
+   * fine, but there was nothing worth extracting" -- both of which
+   * otherwise look identical (an Article with every field at its default).
+   * null when extraction used rawHtml, or the url fetch succeeded.
+   */
+  fetchError: string | null = null;
 
   get infos(): ArticleInfos {
     return {

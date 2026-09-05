@@ -34,15 +34,16 @@ app.post("/api/extract", async (req, res) => {
     // HtmlFetcher swallows fetch errors and returns null rather than
     // throwing (faithful to python-goose's HtmlFetcher, which does the
     // same) -- Crawler then just returns an empty Article, with no
-    // exception for this catch block to report. `additionalData.response`
-    // is null only on that path, so check it explicitly to tell "the URL
+    // exception for this catch block to report. article.fetchError is set
+    // only on that path (network failure OR non-2xx status, e.g. a 403
+    // from anti-bot protection), so check it explicitly to tell "the URL
     // itself couldn't be fetched" apart from "fetched fine, but there was
     // nothing worth extracting."
-    if (body.url && !body.rawHtml && article.additionalData["response"] == null) {
+    if (article.fetchError) {
       res.status(502).json({
         ok: false,
         elapsedMs: Math.round(performance.now() - started),
-        error: `Could not fetch ${body.url} (DNS failure, connection refused, TLS error, or timeout after ${config.httpTimeout}ms). The target site itself may be blocking this request's User-Agent -- try customizing it below.`,
+        error: `Could not fetch ${body.url}: ${article.fetchError}. If this is a non-2xx status, the site may be blocking this request's User-Agent -- try customizing it below.`,
       });
       return;
     }
