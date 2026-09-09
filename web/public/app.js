@@ -268,9 +268,23 @@ extractBtn.addEventListener("click", extract);
 
 // These two buttons are static (see index.html) and always act on whatever
 // currentResults holds at click time, so they're wired up once here rather
-// than rebuilt on every render.
-$("download-all-txt").addEventListener("click", () => downloadAllArticles(currentResults, "txt"));
-$("download-all-json").addEventListener("click", () => downloadAllArticles(currentResults, "json"));
+// than rebuilt on every render. downloadAllArticles hits /api/export now
+// (see download.js), so a click can fail (server down, bad response) --
+// report that instead of leaving it an unhandled rejection.
+$("download-all-txt").addEventListener("click", () =>
+  runDownload(() => downloadAllArticles(currentResults, "txt")),
+);
+$("download-all-json").addEventListener("click", () =>
+  runDownload(() => downloadAllArticles(currentResults, "json")),
+);
+
+async function runDownload(action) {
+  try {
+    await action();
+  } catch (err) {
+    showError(err instanceof Error ? err.message : String(err));
+  }
+}
 
 htmlUrlInput.addEventListener("keydown", (e) => {
   if (e.key === "Enter") extract();
@@ -314,7 +328,7 @@ function downloadButton(label, onClick) {
   button.type = "button";
   button.className = "download-btn";
   button.textContent = label;
-  button.addEventListener("click", onClick);
+  button.addEventListener("click", () => runDownload(onClick));
   return button;
 }
 

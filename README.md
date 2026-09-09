@@ -27,13 +27,58 @@ npm install goose-ts
 
 Requires Node.js 18.17+ (uses native `fetch`, `AbortSignal.timeout`, and `Intl.Segmenter`).
 
+## Three ways to use this
+
+goose-ts, the CLI, and the local web dashboard's HTTP API are three clients of the same core --
+extraction (`src/`) and export/formatting (`src/export.ts`) live in one place, and none of the
+three has any capability the others lack. The web UI in particular is not a special case: its own
+download buttons call the same `/api/export` route documented below, same as any other client
+would.
+
 ## CLI
 
 ```bash
-npx goose-ts https://example.com/some-article        # JSON output
-npx goose-ts https://example.com/some-article --text  # just the cleaned article text
-npx goose-ts --file local.html                        # extract from a local file instead
+npx goose-ts https://example.com/some-article                    # one URL -> JSON on stdout
+npx goose-ts url1 url2 url3                                       # several URLs -> a JSON array
+cat urls.txt | npx goose-ts --format text                         # batch from stdin, plain text
+npx goose-ts url1 url2 --zip --output articles.zip                # bundle into one .zip
+npx goose-ts --file local.html --format text --output article.txt # from a local file, to a file
 ```
+
+URLs can be given as positional arguments or piped one-per-line on stdin (`--file` for local HTML
+takes priority over either, and is always a single item). With more than one URL, requests run
+**sequentially, never in parallel** -- same policy as the web dashboard's batch mode, and for the
+same reason: a burst of concurrent requests looks like exactly the kind of traffic that trips
+anti-bot/rate-limit defenses. A URL that fails doesn't abort the rest of a batch; it's reported
+inline (JSON: `{ ok: false, label, error }` in the array; text: a "(failed: ...)" line) and the
+exit code is nonzero if anything failed, but stdout/the output file still has everything that
+succeeded.
+
+Flags:
+
+- `--format <text|json>` -- output format (default `json`). `--text` is shorthand for `--format text`.
+- `--zip` -- bundle results into one `.zip` of individual files, even for a single URL.
+- `--output <path>` -- write to this file instead of stdout.
+- `--language <lang>`, `--no-images`, `--no-meta-language`, `--timeout <ms>`, `--user-agent <ua>`
+  -- the same options the web dashboard's Configuration panel exposes.
+- `--help`
+
+## HTTP API
+
+The local web dashboard (see below) is really a small Express server with two JSON/file routes,
+both usable from anything that can make an HTTP request -- not just the bundled frontend.
+
+- **`POST /api/extract`** -- `{ url? , rawHtml?, config? }` (at least one of `url`/`rawHtml`) ->
+  `{ ok, elapsedMs, article }` (or `{ ok: false, error }`, HTTP 502, if the fetch itself failed).
+  `article` is the same shape as `Goose#extract()`'s `article.infos`.
+- **`POST /api/export`** -- pure formatting, no fetching: `{ article, label, format? }` for one
+  file, or `{ articles: [{ article, label }, ...], format?, zip? }` for several (always zipped
+  once there's more than one; `zip: true` forces it even for one). Responds with the actual file
+  bytes -- `Content-Type` and a `Content-Disposition` header carrying both an ASCII-safe filename
+  and an RFC 5987 `filename*` for the exact one -- not JSON. Compose the two calls (extract, then
+  export whatever came back) rather than fetching the same page twice.
+
+Both bind to `127.0.0.1` only by default -- see the security note below before changing that.
 
 ## Web UI
 
@@ -57,11 +102,12 @@ text. Below ~640px, type and spacing tighten further for phone-sized screens.
 Every successful result can be downloaded as `.txt` (title, byline, source URL, then the cleaned
 text) or `.json` (the same object the sidebar's Raw JSON view shows), filed under its own
 sanitized-from-the-title filename. With more than one result, a "Download all" row bundles every
-successful article into a single `.zip` -- one file per article, same two format choices, colliding
-filenames disambiguated automatically. All of this runs client-side in `web/public/download.js`
-against data already sitting in memory (nothing is re-fetched), including a small dependency-free
-ZIP writer (uncompressed/"store" entries, which is all a bundle of already-small text/JSON files
-needs, and whose filenames it flags UTF-8 so they don't garble in the zip tool that opens them).
+successful article into a single `.zip`, same two format choices, colliding filenames disambiguated
+automatically. These buttons are a thin client (`web/public/download.js`) over `POST /api/export`
+(see HTTP API above) -- the actual rendering, including a small dependency-free ZIP writer
+(uncompressed/"store" entries, plenty for already-small text/JSON files, with filenames flagged
+UTF-8 so they don't garble in whatever unzips them), lives once in `src/export.ts` and is exactly
+what the CLI's `--format`/`--zip` flags and the API itself use too.
 
 Encoding is handled explicitly rather than left to guesswork: every file is encoded UTF-8, `.txt`
 files carry a leading byte-order mark (so an editor that would otherwise fall back to a legacy
