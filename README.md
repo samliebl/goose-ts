@@ -54,6 +54,15 @@ side column doesn't fit, and a distant panel you have to scroll back up to reach
 anyway -- each result instead carries its own metadata inline, nested and collapsed under its own
 text. Below ~640px, type and spacing tighten further for phone-sized screens.
 
+Every successful result can be downloaded as `.txt` (title, byline, source URL, then the cleaned
+text) or `.json` (the same object the sidebar's Raw JSON view shows), filed under its own
+sanitized-from-the-title filename. With more than one result, a "Download all" row bundles every
+successful article into a single `.zip` -- one file per article, same two format choices, colliding
+filenames disambiguated automatically. All of this runs client-side in `web/public/download.js`
+against data already sitting in memory (nothing is re-fetched), including a small dependency-free
+ZIP writer (uncompressed/"store" entries, which is all a bundle of already-small text/JSON files
+needs).
+
 ```bash
 npm install
 npm run web   # -> http://127.0.0.1:4173

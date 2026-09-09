@@ -412,6 +412,18 @@ select:disabled {
   color: var(--bad);
 }
 
+.download-all-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.download-all-label {
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
 .results-layout {
   display: grid;
   grid-template-columns: 1fr 320px;
@@ -506,6 +518,29 @@ select:disabled {
 
 .meta-toggle[aria-pressed="true"] {
   background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.download-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.download-btn {
+  flex-shrink: 0;
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  border-radius: 6px;
+  padding: 4px 10px;
+  font-size: 12px;
+  font-family: var(--font-mono);
+  cursor: pointer;
+}
+
+.download-btn:hover {
   border-color: var(--accent);
   color: var(--accent);
 }

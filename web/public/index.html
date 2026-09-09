@@ -145,6 +145,15 @@
         <div class="results hidden" id="results">
           <div class="status-bar" id="status-bar"></div>
 
+          <!-- Shown only when there's more than one successful result -- see
+               renderStatusBar in app.js. Bundles every successful article
+               into one .zip, each as its own .txt or .json file. -->
+          <div class="download-all-row hidden" id="download-all-row">
+            <span class="download-all-label">Download all:</span>
+            <button type="button" class="download-btn" id="download-all-txt">.txt (.zip)</button>
+            <button type="button" class="download-btn" id="download-all-json">.json (.zip)</button>
+          </div>
+
           <div class="results-layout" id="results-layout">
             <div class="results-list" id="results-list"></div>
 

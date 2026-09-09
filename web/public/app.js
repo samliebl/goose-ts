@@ -3,6 +3,8 @@
 // a safe attribute like <img src>), never innerHTML -- see appendResultItem
 // and buildMetadataBlock.
 
+import { downloadArticle, downloadAllArticles } from "./download.js";
+
 const $ = (id) => document.getElementById(id);
 
 const THEME_KEY = "goose-ts-theme";
@@ -45,6 +47,7 @@ const emptyState = $("empty-state");
 const results = $("results");
 const resultsList = $("results-list");
 const statusBar = $("status-bar");
+const downloadAllRow = $("download-all-row");
 const resultsLayout = $("results-layout");
 const resultSide = $("result-side");
 const sideHeading = $("side-heading");
@@ -263,6 +266,12 @@ async function runBatch(jobs) {
 
 extractBtn.addEventListener("click", extract);
 
+// These two buttons are static (see index.html) and always act on whatever
+// currentResults holds at click time, so they're wired up once here rather
+// than rebuilt on every render.
+$("download-all-txt").addEventListener("click", () => downloadAllArticles(currentResults, "txt"));
+$("download-all-json").addEventListener("click", () => downloadAllArticles(currentResults, "json"));
+
 htmlUrlInput.addEventListener("keydown", (e) => {
   if (e.key === "Enter") extract();
 });
@@ -300,6 +309,15 @@ function chip(text) {
   return span;
 }
 
+function downloadButton(label, onClick) {
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = "download-btn";
+  button.textContent = label;
+  button.addEventListener("click", onClick);
+  return button;
+}
+
 function metaRow(dl, label, value) {
   if (!value) return;
   const dt = document.createElement("dt");
@@ -315,6 +333,11 @@ function renderStatusBar(items) {
   const okCount = items.filter((r) => r.ok).length;
   const failCount = items.length - okCount;
   const totalMs = items.reduce((sum, r) => sum + (r.elapsedMs || 0), 0);
+
+  // With exactly one result, this would just duplicate the per-article
+  // download buttons wrapped pointlessly in a one-file zip -- only worth
+  // showing once there's an actual batch to bundle.
+  downloadAllRow.classList.toggle("hidden", okCount < 2);
 
   const okSpan = document.createElement("span");
   okSpan.className = "ok";
@@ -454,6 +477,14 @@ function appendResultItem(item, index, isBatch) {
       }
     }
     body.append(textBox);
+
+    const downloadRow = document.createElement("div");
+    downloadRow.className = "download-row";
+    downloadRow.append(
+      downloadButton(".txt", () => downloadArticle(item, "txt")),
+      downloadButton(".json", () => downloadArticle(item, "json")),
+    );
+    body.append(downloadRow);
 
     // No room for a persistent side column below the desktop breakpoint --
     // each result carries its own metadata inline instead, right where
