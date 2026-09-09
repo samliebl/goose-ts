@@ -7,9 +7,34 @@ const RESERVED_FILENAME_CHARS = '<>:"/\\|?*';
 // separator) -- checked as a plain numeric comparison below rather than a
 // regex escape range, which this file didn't survive edits with intact.
 const MAX_CONTROL_CHAR_CODE = 31;
+// Zero-width and bidi-control characters -- invisible in a filename (or, for
+// the bidi overrides, actively misleading: they can make a filename render
+// in an order different from its actual character sequence). An article
+// title could pick these up from tracking pixels/obfuscation tricks on the
+// source page, so strip them rather than let them end up invisibly in a
+// saved filename.
+const INVISIBLE_OR_BIDI_CODEPOINTS = new Set([
+  0x200b,
+  0x200c,
+  0x200d, // zero-width space / ZWNJ / ZWJ
+  0x200e,
+  0x200f, // left-to-right / right-to-left marks
+  0x202a,
+  0x202b,
+  0x202c,
+  0x202d,
+  0x202e, // bidi embedding/override controls
+  0x2060, // word joiner
+  0xfeff, // BOM / zero-width no-break space
+]);
 
 function isUnsafeFilenameChar(ch) {
-  return ch.codePointAt(0) <= MAX_CONTROL_CHAR_CODE || RESERVED_FILENAME_CHARS.includes(ch);
+  const code = ch.codePointAt(0);
+  return (
+    code <= MAX_CONTROL_CHAR_CODE ||
+    RESERVED_FILENAME_CHARS.includes(ch) ||
+    INVISIBLE_OR_BIDI_CODEPOINTS.has(code)
+  );
 }
 
 /**
@@ -44,13 +69,36 @@ function plainTextFor(item) {
   return lines.join("\n");
 }
 
-/** filename base (no extension) plus the rendered text/extension for one article in one format. */
+const textEncoder = new TextEncoder(); // always encodes to UTF-8
+const UTF8_BOM = new Uint8Array([0xef, 0xbb, 0xbf]);
+
+/**
+ * Encodes text as UTF-8 bytes, optionally prefixed with a UTF-8 byte-order
+ * mark. Plain-text files get one; JSON never does (a BOM there isn't
+ * conventional and can trip up strict parsers). Without it, a .txt file
+ * with no non-ASCII characters at all is indistinguishable from one in a
+ * legacy 8-bit encoding to anything that has to guess -- e.g. Windows
+ * Notepad, which falls back to the system locale's codepage rather than
+ * UTF-8 -- so an em dash or an accented name three paragraphs in
+ * (something goose-ts has no way to predict at export time) turns into a
+ * garbled glyph on open. The BOM removes the guessing entirely.
+ */
+function encodeUtf8(text, withBom) {
+  const body = textEncoder.encode(text);
+  if (!withBom) return body;
+  const bytes = new Uint8Array(UTF8_BOM.length + body.length);
+  bytes.set(UTF8_BOM, 0);
+  bytes.set(body, UTF8_BOM.length);
+  return bytes;
+}
+
+/** filename base (no extension) plus the rendered UTF-8 bytes for one article in one format. */
 function renderFormat(item, format) {
   const base = sanitizeFilename(item.article.title || item.label);
   if (format === "json") {
-    return { base, ext: "json", text: JSON.stringify(item.article, null, 2) };
+    return { base, ext: "json", bytes: encodeUtf8(JSON.stringify(item.article, null, 2), false) };
   }
-  return { base, ext: "txt", text: plainTextFor(item) };
+  return { base, ext: "txt", bytes: encodeUtf8(plainTextFor(item), true) };
 }
 
 function triggerDownload(filename, blob) {
@@ -68,9 +116,9 @@ function triggerDownload(filename, blob) {
 
 /** Downloads one article as a single .txt or .json file. */
 export function downloadArticle(item, format) {
-  const { base, ext, text } = renderFormat(item, format);
-  const mime = format === "json" ? "application/json" : "text/plain";
-  triggerDownload(`${base}.${ext}`, new Blob([text], { type: mime }));
+  const { base, ext, bytes } = renderFormat(item, format);
+  const mime = format === "json" ? "application/json" : "text/plain;charset=utf-8";
+  triggerDownload(`${base}.${ext}`, new Blob([bytes], { type: mime }));
 }
 
 /** Downloads every successful item at once, as one .zip of individual .txt or .json files. */
@@ -80,11 +128,11 @@ export function downloadAllArticles(items, format) {
 
   const usedNames = new Set();
   const entries = okItems.map((item) => {
-    const { base, ext, text } = renderFormat(item, format);
+    const { base, ext, bytes } = renderFormat(item, format);
     let name = `${base}.${ext}`;
     for (let n = 2; usedNames.has(name); n++) name = `${base} (${n}).${ext}`;
     usedNames.add(name);
-    return { name, data: new TextEncoder().encode(text) };
+    return { name, data: bytes };
   });
 
   triggerDownload(`articles-${format}.zip`, buildZip(entries));
@@ -133,14 +181,15 @@ function dosDateTime(date) {
 
 /** Builds a valid (uncompressed) .zip Blob from [{ name, data: Uint8Array }]. */
 function buildZip(entries) {
-  const encoder = new TextEncoder();
+  // Reuses the module-level textEncoder (see encodeUtf8) -- one instance is
+  // plenty; nothing about it is per-call state.
   const { time: dosTime, day: dosDate } = dosDateTime(new Date());
   const chunks = [];
   const central = [];
   let offset = 0;
 
   for (const { name, data } of entries) {
-    const nameBytes = encoder.encode(name);
+    const nameBytes = textEncoder.encode(name);
     const crc = crc32(data);
 
     const header = new DataView(new ArrayBuffer(30));

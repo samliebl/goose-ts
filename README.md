@@ -61,7 +61,15 @@ successful article into a single `.zip` -- one file per article, same two format
 filenames disambiguated automatically. All of this runs client-side in `web/public/download.js`
 against data already sitting in memory (nothing is re-fetched), including a small dependency-free
 ZIP writer (uncompressed/"store" entries, which is all a bundle of already-small text/JSON files
-needs).
+needs, and whose filenames it flags UTF-8 so they don't garble in the zip tool that opens them).
+
+Encoding is handled explicitly rather than left to guesswork: every file is encoded UTF-8, `.txt`
+files carry a leading byte-order mark (so an editor that would otherwise fall back to a legacy
+codepage -- Windows Notepad, mainly -- renders an em dash or a non-English name correctly instead
+of as garbage) while `.json` never gets one (nonstandard there, and some strict parsers choke on
+it). Filenames strip the handful of characters actual filesystems reserve, plus zero-width and
+bidi-override characters an article title could carry in from the source page, while leaving
+non-Latin scripts (Chinese, Arabic, accented Latin, ...) untouched.
 
 ```bash
 npm install
