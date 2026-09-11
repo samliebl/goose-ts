@@ -26,7 +26,7 @@ fixtures translated or adapted from earlier ports in this lineage:
 
   - goose-ts (this project)
     TypeScript/ESM port for modern Node.js, written by Sam Liebl.
-    https://github.com/stliebl/goose-ts
+    https://github.com/samliebl/goose-ts
 
 All of the above are licensed under the Apache License, Version 2.0.
 See the LICENSE file for the full license text.

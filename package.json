@@ -5,10 +5,10 @@
   "type": "module",
   "license": "Apache-2.0",
   "author": "Sam Liebl",
-  "homepage": "https://github.com/stliebl/goose-ts",
+  "homepage": "https://github.com/samliebl/goose-ts",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/stliebl/goose-ts.git"
+    "url": "git+https://github.com/samliebl/goose-ts.git"
   },
   "keywords": [
     "article extraction",
