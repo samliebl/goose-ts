@@ -223,10 +223,11 @@ the work before it:
 - **[node-unfluff](https://github.com/ageitgey/node-unfluff)** — Adam Geitgey. An earlier,
   independent JS reimagining of goose's heuristics; consulted as prior art for what a
   JS-idiomatic API can look like.
-- **goose-ts** (this port) — Sam Liebl, with [Claude](https://claude.com/claude-code)
-  (Anthropic).
+- **goose-ts** (this port) — Sam Liebl.
 
 Licensed Apache-2.0, same as every project in that chain — see [LICENSE](./LICENSE) and [NOTICE](./NOTICE).
+
+This project made use of Claude Code.
 
 ## Development
 

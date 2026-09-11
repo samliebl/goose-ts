@@ -25,8 +25,7 @@ fixtures translated or adapted from earlier ports in this lineage:
     https://github.com/ageitgey/node-unfluff
 
   - goose-ts (this project)
-    TypeScript/ESM port for modern Node.js, written by Sam Liebl with
-    Claude (Anthropic).
+    TypeScript/ESM port for modern Node.js, written by Sam Liebl.
     https://github.com/stliebl/goose-ts
 
 All of the above are licensed under the Apache License, Version 2.0.
