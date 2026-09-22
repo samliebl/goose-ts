@@ -10,6 +10,13 @@ export {
   type ExportFormat,
   type RenderedExport,
 } from "./export.js";
+export {
+  extractEvents,
+  type EventInfo,
+  type EventLocation,
+  type EventOffer,
+  type ExtractEventsOptions,
+} from "./events.js";
 export { Goose, type ExtractOptions } from "./Goose.js";
 export { Image, ImageDetails, LocallyStoredImage } from "./Image.js";
 export { Video } from "./Video.js";
