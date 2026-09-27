@@ -38,7 +38,7 @@
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
-    "web": "tsx web/server.ts",
+    "web": "tsx --env-file-if-exists=.env web/server.ts",
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",

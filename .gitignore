@@ -5,3 +5,6 @@ coverage/
 .DS_Store
 .claude/
 web/.data/
+.env
+.env.*
+!.env.example

@@ -37,8 +37,15 @@ function ownerEmail(): string {
   return requireEnv("OWNER_EMAIL").trim().toLowerCase();
 }
 
+function isProduction(): boolean {
+  return process.env.NODE_ENV === "production";
+}
+
 function sessionSecret(): string {
-  return requireEnv("SESSION_SECRET");
+  const value = process.env.SESSION_SECRET;
+  if (value) return value;
+  if (isProduction()) throw new Error("Missing required environment variable: SESSION_SECRET");
+  return "dev-only-insecure-secret-change-me";
 }
 
 function publicUrl(): string {
@@ -50,9 +57,26 @@ function resendFrom(): string {
 }
 
 let resendClient: Resend | null = null;
-function resend(): Resend {
-  resendClient ??= new Resend(requireEnv("RESEND_API_KEY"));
-  return resendClient;
+
+/**
+ * Sends an email if RESEND_API_KEY is set; otherwise logs it to the
+ * console instead -- fine for local dev (no key needed to click through
+ * the login flow yourself), refused outright in production, where a
+ * silently-not-sent email is a real problem, not a convenience.
+ */
+async function sendEmail(to: string, subject: string, text: string): Promise<void> {
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) {
+    if (isProduction()) {
+      throw new Error("RESEND_API_KEY must be set in production.");
+    }
+    console.log(
+      `\n──── email (not sent: no RESEND_API_KEY) ────\nTo: ${to}\nSubject: ${subject}\n\n${text}\n───────────────────────────────────────────\n`,
+    );
+    return;
+  }
+  resendClient ??= new Resend(apiKey);
+  await resendClient.emails.send({ from: resendFrom(), to, subject, text });
 }
 
 function hashToken(token: string): string {
@@ -107,12 +131,11 @@ export async function requestLoginLink(email: string): Promise<void> {
   insertAuthToken(hashToken(token), normalized, expiresAt);
 
   const link = `${publicUrl()}/api/auth/verify?token=${encodeURIComponent(token)}`;
-  await resend().emails.send({
-    from: resendFrom(),
-    to: normalized,
-    subject: "Your regoose sign-in link",
-    text: `Sign in: ${link}\n\nThis link works once and expires in 15 minutes. If you didn't request this, ignore it.`,
-  });
+  await sendEmail(
+    normalized,
+    "Your regoose sign-in link",
+    `Sign in: ${link}\n\nThis link works once and expires in 15 minutes. If you didn't request this, ignore it.`,
+  );
 }
 
 /** Spends a login token. Returns the email it was issued for, or null if it's invalid, expired, or already used. */
@@ -174,12 +197,11 @@ export function verifySessionCookieValue(value: string | undefined): Session | n
 /** Never throws -- a failed notification must not break the login it's reporting on. */
 export async function sendLoginNotification(email: string): Promise<void> {
   try {
-    await resend().emails.send({
-      from: resendFrom(),
-      to: ownerEmail(),
-      subject: `regoose: sign-in as ${email}`,
-      text: `${email} just signed in to regoose.${isOwner(email) ? "" : " That's not the owner account -- if you didn't expect this, remove them from the allowlist."}`,
-    });
+    await sendEmail(
+      ownerEmail(),
+      `regoose: sign-in as ${email}`,
+      `${email} just signed in to regoose.${isOwner(email) ? "" : " That's not the owner account -- if you didn't expect this, remove them from the allowlist."}`,
+    );
   } catch {
     /* ignored -- see doc comment */
   }
