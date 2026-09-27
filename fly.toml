@@ -1,0 +1,22 @@
+app = "regoose"
+primary_region = "iad"
+
+[build]
+
+[env]
+  HOST = "0.0.0.0"
+  NODE_ENV = "production"
+  DB_PATH = "/data/goose-ts.sqlite"
+  PUBLIC_URL = "https://regoose.com"
+  RESEND_FROM = "regoose <send@regoose.com>"
+
+[http_service]
+  internal_port = 4173
+  force_https = true
+  auto_stop_machines = true
+  auto_start_machines = true
+  min_machines_running = 0
+
+[mounts]
+  source = "regoose_data"
+  destination = "/data"
