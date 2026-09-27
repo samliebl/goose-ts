@@ -125,7 +125,8 @@ body {
   font-size: 13px;
 }
 
-.repo-link {
+.repo-link,
+.admin-link {
   color: var(--text-muted);
   text-decoration: none;
   font-size: 14px;
@@ -134,7 +135,8 @@ body {
   padding: 5px 11px;
 }
 
-.repo-link:hover {
+.repo-link:hover,
+.admin-link:hover {
   color: var(--text);
   border-color: var(--accent);
 }

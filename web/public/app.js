@@ -36,6 +36,16 @@ prefersDark.addEventListener("change", () => {
 
 syncThemeIcon();
 
+// Only the owner account can do anything at /admin (see requireOwner in
+// server.ts) -- everyone else would just get a 403 in there, so the link
+// stays hidden unless /api/me confirms it's worth showing.
+fetch("/api/me")
+  .then((r) => (r.ok ? r.json() : null))
+  .then((me) => {
+    if (me?.isOwner) $("admin-link").classList.remove("hidden");
+  })
+  .catch(() => {});
+
 const urlInput = $("url-input");
 const htmlInput = $("html-input");
 const htmlUrlInput = $("html-url-input");

@@ -187,6 +187,14 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 
 app.use(express.static(join(here, "public")));
 
+// Lets the static frontend know whether to show the admin link -- the
+// static index.html has no server-side templating, so it can't know this
+// on its own.
+app.get("/api/me", (req, res) => {
+  const session = (req as Request & { session: Session }).session;
+  res.json({ email: session.email, isOwner: isOwner(session.email) });
+});
+
 function requireOwner(req: Request, res: Response, next: NextFunction): void {
   const session = (req as Request & { session: Session }).session;
   if (!isOwner(session.email)) {
