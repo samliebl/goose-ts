@@ -7,7 +7,6 @@ primary_region = "iad"
   HOST = "0.0.0.0"
   NODE_ENV = "production"
   DB_PATH = "/data/goose-ts.json"
-  PUBLIC_URL = "https://regoose.com"
   RESEND_FROM = "regoose <send@send.regoose.com>"
 
 [http_service]

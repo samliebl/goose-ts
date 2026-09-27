@@ -48,10 +48,6 @@ function sessionSecret(): string {
   return "dev-only-insecure-secret-change-me";
 }
 
-function publicUrl(): string {
-  return process.env.PUBLIC_URL ?? `http://127.0.0.1:${process.env.PORT ?? 4173}`;
-}
-
 function resendFrom(): string {
   return process.env.RESEND_FROM ?? `regoose <send@regoose.com>`;
 }
@@ -121,8 +117,14 @@ export function removeAllowedEmail(email: string): void {
  * of whether the email was allowed or not: the caller must respond
  * identically either way, so this endpoint can't be used to discover
  * which addresses are on the allowlist.
+ *
+ * baseUrl is the caller's job to supply (see server.ts, which derives it
+ * from the actual incoming request) rather than a fixed PUBLIC_URL config
+ * value -- a static value drifts the moment the app moves between hosts
+ * (a Fly default subdomain today, a custom domain once DNS is pointed at
+ * it), silently mailing out links to wherever it used to live.
  */
-export async function requestLoginLink(email: string): Promise<void> {
+export async function requestLoginLink(email: string, baseUrl: string): Promise<void> {
   const normalized = email.trim().toLowerCase();
   if (!isEmailAllowed(normalized)) return;
 
@@ -130,7 +132,7 @@ export async function requestLoginLink(email: string): Promise<void> {
   const expiresAt = new Date(Date.now() + TOKEN_LIFETIME_MS).toISOString();
   insertAuthToken(hashToken(token), normalized, expiresAt);
 
-  const link = `${publicUrl()}/api/auth/verify?token=${encodeURIComponent(token)}`;
+  const link = `${baseUrl}/api/auth/verify?token=${encodeURIComponent(token)}`;
   await sendEmail(
     normalized,
     "Your regoose sign-in link",

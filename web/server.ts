@@ -129,8 +129,9 @@ app.post("/api/auth/request-link", async (req, res) => {
   }
 
   const email = typeof req.body?.email === "string" ? req.body.email : "";
+  const baseUrl = `${req.protocol}://${req.get("host")}`;
   try {
-    if (email) await requestLoginLink(email);
+    if (email) await requestLoginLink(email, baseUrl);
   } catch {
     // Fall through to the identical response below regardless -- see
     // requestLoginLink's doc comment on why success/failure/not-allowed
