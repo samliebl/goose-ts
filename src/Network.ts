@@ -29,7 +29,7 @@ export class HtmlFetcher {
 
     try {
       this.response = await fetch(this.request, {
-        signal: AbortSignal.timeout(this.config.httpTimeout),
+        signal: AbortSignal.timeout(Math.min(this.config.httpTimeout, this.config.remainingMs())),
       });
     } catch (err) {
       this.response = null;

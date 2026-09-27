@@ -2,6 +2,7 @@ import { parseArgs } from "node:util";
 import { readFile, writeFile } from "node:fs/promises";
 import { Goose } from "./Goose.js";
 import type { ArticleInfos } from "./Article.js";
+import { describeFetchFailure } from "./describeFetchFailure.js";
 import {
   articlePlainText,
   encodeTextWithBom,
@@ -26,6 +27,7 @@ Usage:
   --no-images           Skip fetching/scoring images
   --no-meta-language    Don't prefer the page's own declared language over --language
   --timeout <ms>        HTTP timeout per request; default 30000
+  --overall-timeout <ms> Total budget for one extraction (mainly bounds image scoring); default 45000
   --user-agent <ua>     User-Agent sent with outbound requests
   --help                Show this help
 
@@ -87,6 +89,7 @@ async function main(): Promise<void> {
       "no-images": { type: "boolean", default: false },
       "no-meta-language": { type: "boolean", default: false },
       timeout: { type: "string" },
+      "overall-timeout": { type: "string" },
       "user-agent": { type: "string" },
       help: { type: "boolean", short: "h", default: false },
     },
@@ -112,6 +115,7 @@ async function main(): Promise<void> {
     enableImageFetching: !values["no-images"],
     useMetaLanguage: !values["no-meta-language"],
     ...(values.timeout ? { httpTimeout: Number(values.timeout) } : {}),
+    ...(values["overall-timeout"] ? { overallTimeoutMs: Number(values["overall-timeout"]) } : {}),
     ...(values["user-agent"] ? { browserUserAgent: values["user-agent"] } : {}),
   };
   const goose = new Goose(config);
@@ -143,8 +147,9 @@ async function main(): Promise<void> {
   const results: Result[] = [];
   for (const job of jobs) {
     const article = await goose.extract(job.request);
-    if (article.fetchError) {
-      results.push({ ok: false, label: job.label, error: article.fetchError });
+    const failure = describeFetchFailure(article);
+    if (failure) {
+      results.push({ ok: false, label: job.label, error: failure });
     } else {
       results.push({ ok: true, label: job.label, article: article.infos });
     }
@@ -157,9 +162,7 @@ async function main(): Promise<void> {
     // batch failures below are reported differently, inline with whatever
     // else succeeded, since aborting the whole run over one bad URL in a
     // batch would throw away everything else that worked.
-    console.error(
-      `Could not fetch ${jobs[0]!.label}: ${results[0]!.error}. If this is a non-2xx status, the site may be blocking this request's User-Agent -- try --user-agent.`,
-    );
+    console.error(results[0]!.error);
     process.exitCode = 1;
     return;
   }

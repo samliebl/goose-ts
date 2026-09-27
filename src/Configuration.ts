@@ -12,8 +12,19 @@ export interface ConfigurationOptions {
   stopwordsClass?: StopWordsClass;
   /** User-Agent sent with outbound HTTP requests. */
   browserUserAgent?: string;
-  /** Timeout (ms) for outbound HTTP requests. Default 30000. */
+  /** Timeout (ms) for each individual outbound HTTP request. Default 30000. */
   httpTimeout?: number;
+  /**
+   * goose-ts addition, not in python-goose: wall-clock budget (ms) for the
+   * *whole* extract() call, not just one request. python-goose's image
+   * scoring downloads every candidate image one at a time (see
+   * ImagesExtractor) -- on an image-heavy page, a dozen-plus sequential
+   * requests each individually within httpTimeout can still add up to
+   * several minutes with nothing to show for it. Once this budget is spent,
+   * in-flight and future requests are cut short rather than let the whole
+   * extraction run indefinitely. Default 45000.
+   */
+  overallTimeoutMs?: number;
   /**
    * goose-ts addition, not in python-goose: when DOM-based scoring finds
    * little or nothing (see MIN_SUBSTANTIAL_TEXT_LENGTH in Crawler.ts) --
@@ -33,6 +44,8 @@ export class Configuration {
   browserUserAgent: string;
   httpTimeout: number;
   enableJsonLdFallback: boolean;
+  /** Timestamp (ms since epoch) this extraction's overall budget runs out. Computed once, here, so every fetch site shares the same clock regardless of when it happens to run. */
+  readonly deadlineAt: number;
 
   constructor(options: ConfigurationOptions = {}) {
     this.enableImageFetching = options.enableImageFetching ?? true;
@@ -42,5 +55,11 @@ export class Configuration {
     this.browserUserAgent = options.browserUserAgent ?? `goose-ts/${VERSION}`;
     this.httpTimeout = options.httpTimeout ?? 30_000;
     this.enableJsonLdFallback = options.enableJsonLdFallback ?? true;
+    this.deadlineAt = Date.now() + (options.overallTimeoutMs ?? 45_000);
+  }
+
+  /** Milliseconds left in this extraction's overall budget; never negative. */
+  remainingMs(): number {
+    return Math.max(0, this.deadlineAt - Date.now());
   }
 }

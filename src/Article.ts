@@ -64,6 +64,16 @@ export class Article {
    * null when extraction used rawHtml, or the url fetch succeeded.
    */
   fetchError: string | null = null;
+  /**
+   * goose-ts addition, not in python-goose: set when the page fetched fine
+   * but the overall extraction ran out of its time budget before finishing
+   * -- in practice, always during image scoring (see ImagesExtractor),
+   * which can otherwise take minutes on an image-heavy or slow-loading
+   * page even though every individual request is itself bounded. Distinct
+   * from fetchError: this means the page *was* reachable, just too slow to
+   * fully process in time.
+   */
+  timedOut = false;
 
   get infos(): ArticleInfos {
     return {

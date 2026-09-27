@@ -1,5 +1,6 @@
 export { Article, type ArticleInfos } from "./Article.js";
 export { Configuration, type ConfigurationOptions } from "./Configuration.js";
+export { describeFetchFailure } from "./describeFetchFailure.js";
 export {
   articlePlainText,
   encodeTextWithBom,

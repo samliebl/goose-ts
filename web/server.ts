@@ -3,6 +3,7 @@ import { fileURLToPath } from "node:url";
 import express, { type NextFunction, type Request, type Response } from "express";
 import {
   Configuration,
+  describeFetchFailure,
   Goose,
   renderArticleExport,
   renderArticlesZip,
@@ -269,11 +270,12 @@ app.post("/api/extract", async (req, res) => {
     // from anti-bot protection), so check it explicitly to tell "the URL
     // itself couldn't be fetched" apart from "fetched fine, but there was
     // nothing worth extracting."
-    if (article.fetchError) {
-      res.status(502).json({
+    const failure = describeFetchFailure(article);
+    if (failure) {
+      res.status(article.fetchError ? 502 : 504).json({
         ok: false,
         elapsedMs: Math.round(performance.now() - started),
-        error: `Could not fetch ${body.url}: ${article.fetchError}. If this is a non-2xx status, the site may be blocking this request's User-Agent -- try customizing it below.`,
+        error: failure,
       });
       return;
     }

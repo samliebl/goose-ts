@@ -106,6 +106,8 @@ export class Crawler {
       await this.applyJsonLdFallback(article, parser);
     }
 
+    if (this.config.remainingMs() <= 0) article.timedOut = true;
+
     return article;
   }
 
