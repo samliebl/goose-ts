@@ -21,10 +21,10 @@ describe("Configuration overall timeout budget", () => {
     expect(config.remainingMs()).toBe(0);
   });
 
-  it("defaults to a 45s budget when unset", () => {
+  it("defaults to a 20s budget when unset", () => {
     const config = new Configuration();
-    expect(config.remainingMs()).toBeGreaterThan(44_000);
-    expect(config.remainingMs()).toBeLessThanOrEqual(45_000);
+    expect(config.remainingMs()).toBeGreaterThan(19_000);
+    expect(config.remainingMs()).toBeLessThanOrEqual(20_000);
   });
 });
 

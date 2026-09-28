@@ -8,7 +8,7 @@ describe("describeFetchFailure", () => {
     expect(describeFetchFailure(article)).toBeNull();
   });
 
-  it.each([403, 406, 429, 451])("calls it out as blocking for HTTP %i", (status) => {
+  it.each([401, 403, 406, 429, 451])("calls it out as blocking for HTTP %i", (status) => {
     const article = new Article();
     article.fetchError = `HTTP ${status} Forbidden`;
 
@@ -18,14 +18,27 @@ describe("describeFetchFailure", () => {
     expect(message).toContain(String(status));
   });
 
-  it("does not call other non-2xx statuses blocking", () => {
+  it("calls out a 5xx as a server-side issue, not blocking", () => {
     const article = new Article();
     article.fetchError = "HTTP 500 Internal Server Error";
 
     const message = describeFetchFailure(article);
 
     expect(message).not.toContain("blocking automated tools");
+    expect(message).toContain("temporary server-side issue");
     expect(message).toContain("500");
+  });
+
+  it("calls out an unrecognized 4xx as a deliberate rejection, not a glitch or confirmed blocking", () => {
+    const article = new Article();
+    article.fetchError = "HTTP 404 Not Found";
+
+    const message = describeFetchFailure(article);
+
+    expect(message).not.toContain("blocking automated tools");
+    expect(message).not.toContain("temporary server-side issue");
+    expect(message).toContain("deliberate rejection");
+    expect(message).toContain("404");
   });
 
   it("does not call a network-level failure blocking", () => {

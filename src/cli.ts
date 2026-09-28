@@ -26,8 +26,8 @@ Usage:
   --language <lang>     Fallback language (ISO 639-1) for stopword scoring; default en
   --no-images           Skip fetching/scoring images
   --no-meta-language    Don't prefer the page's own declared language over --language
-  --timeout <ms>        HTTP timeout per request; default 30000
-  --overall-timeout <ms> Total budget for one extraction (mainly bounds image scoring); default 45000
+  --timeout <ms>        HTTP timeout per request; default 12000
+  --overall-timeout <ms> Total budget for one extraction (mainly bounds image scoring); default 20000
   --user-agent <ua>     User-Agent sent with outbound requests
   --help                Show this help
 

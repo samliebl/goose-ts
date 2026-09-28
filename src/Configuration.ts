@@ -12,7 +12,14 @@ export interface ConfigurationOptions {
   stopwordsClass?: StopWordsClass;
   /** User-Agent sent with outbound HTTP requests. */
   browserUserAgent?: string;
-  /** Timeout (ms) for each individual outbound HTTP request. Default 30000. */
+  /**
+   * Timeout (ms) for each individual outbound HTTP request. Default 12000.
+   * Kept well under a minute deliberately: a site that's actually going to
+   * respond almost always does so in a few seconds, and a site silently
+   * stalling the connection instead of sending a clean block response (a
+   * real anti-bot tactic some sites use against datacenter IPs) should read
+   * as "failed" quickly, not hang for as long as we're willing to wait.
+   */
   httpTimeout?: number;
   /**
    * goose-ts addition, not in python-goose: wall-clock budget (ms) for the
@@ -22,7 +29,7 @@ export interface ConfigurationOptions {
    * requests each individually within httpTimeout can still add up to
    * several minutes with nothing to show for it. Once this budget is spent,
    * in-flight and future requests are cut short rather than let the whole
-   * extraction run indefinitely. Default 45000.
+   * extraction run indefinitely. Default 20000.
    */
   overallTimeoutMs?: number;
   /**
@@ -53,9 +60,9 @@ export class Configuration {
     this.targetLanguage = options.targetLanguage ?? "en";
     this.stopwordsClass = options.stopwordsClass ?? StopWords;
     this.browserUserAgent = options.browserUserAgent ?? `goose-ts/${VERSION}`;
-    this.httpTimeout = options.httpTimeout ?? 30_000;
+    this.httpTimeout = options.httpTimeout ?? 12_000;
     this.enableJsonLdFallback = options.enableJsonLdFallback ?? true;
-    this.deadlineAt = Date.now() + (options.overallTimeoutMs ?? 45_000);
+    this.deadlineAt = Date.now() + (options.overallTimeoutMs ?? 20_000);
   }
 
   /** Milliseconds left in this extraction's overall budget; never negative. */

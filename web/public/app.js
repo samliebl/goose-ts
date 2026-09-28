@@ -111,7 +111,7 @@ function readConfig() {
     enableImageFetching: $("cfg-enable-images").checked,
     useMetaLanguage: $("cfg-use-meta-language").checked,
     targetLanguage: $("cfg-target-language").value,
-    httpTimeout: Number($("cfg-http-timeout").value) || 30000,
+    httpTimeout: Number($("cfg-http-timeout").value) || 12000,
     ...($("cfg-user-agent").value.trim()
       ? { browserUserAgent: $("cfg-user-agent").value.trim() }
       : {}),
