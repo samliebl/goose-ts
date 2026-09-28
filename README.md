@@ -59,8 +59,9 @@ Flags:
 - `--format <text|json>` -- output format (default `json`). `--text` is shorthand for `--format text`.
 - `--zip` -- bundle results into one `.zip` of individual files, even for a single URL.
 - `--output <path>` -- write to this file instead of stdout.
-- `--language <lang>`, `--no-images`, `--no-meta-language`, `--timeout <ms>`, `--user-agent <ua>`
-  -- the same options the web dashboard's Configuration panel exposes.
+- `--language <lang>`, `--no-images`, `--no-meta-language`, `--timeout <ms>`,
+  `--overall-timeout <ms>`, `--user-agent <ua>` -- the same options the web dashboard's
+  Configuration panel exposes.
 - `--help`
 
 ## HTTP API
@@ -165,8 +166,9 @@ const goose = new Goose({
   enableImageFetching: true, // fetch & score candidate images (default true)
   targetLanguage: "en", // fallback language for stopword scoring
   useMetaLanguage: true, // prefer the page's own declared language
-  httpTimeout: 30_000, // ms
-  browserUserAgent: "goose-ts/0.1.0",
+  httpTimeout: 12_000, // ms, per request (default 12000)
+  overallTimeoutMs: 20_000, // ms, wall-clock budget for the whole extract() call (default 20000)
+  browserUserAgent: "goose-ts/0.2.0",
   enableJsonLdFallback: true, // see "Client-side-rendered pages" below (default true)
 });
 ```
@@ -238,9 +240,5 @@ npm run build    # tsup -> dist/
 npm run typecheck
 npm run lint
 ```
-
----
-
-## Ideas
 
 Some ideas for future features.
