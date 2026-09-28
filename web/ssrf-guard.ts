@@ -23,6 +23,32 @@ import { isIP } from "node:net";
  * more attractive target than a small personal tool.
  */
 
+/**
+ * node:dns/promises' lookup() has no timeout option (unlike fetch's
+ * AbortSignal support) -- without one, a hostname whose resolver just never
+ * answers hangs this call, and everything waiting on it, indefinitely. This
+ * runs before Goose.extract() even starts, so it's outside that call's own
+ * overall time budget (see Configuration.deadlineAt) entirely; it needs its
+ * own bound.
+ */
+const DNS_LOOKUP_TIMEOUT_MS = 8_000;
+
+function withTimeout<T>(promise: Promise<T>, ms: number, onTimeout: () => Error): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => reject(onTimeout()), ms);
+    promise.then(
+      (value) => {
+        clearTimeout(timer);
+        resolve(value);
+      },
+      (err) => {
+        clearTimeout(timer);
+        reject(err);
+      },
+    );
+  });
+}
+
 function isBlockedIPv4(ip: string): boolean {
   const parts = ip.split(".").map(Number);
   if (parts.length !== 4 || parts.some((p) => Number.isNaN(p) || p < 0 || p > 255)) return true; // malformed -- fail closed
@@ -87,7 +113,13 @@ export async function assertSafeToFetch(urlString: string): Promise<void> {
   if (!literalIpVersion) {
     let addresses: string[];
     try {
-      addresses = (await lookup(url.hostname, { all: true })).map((r) => r.address);
+      addresses = (
+        await withTimeout(
+          lookup(url.hostname, { all: true }),
+          DNS_LOOKUP_TIMEOUT_MS,
+          () => new Error("timed out"),
+        )
+      ).map((r) => r.address);
     } catch {
       throw new Error("Could not resolve that host.");
     }
