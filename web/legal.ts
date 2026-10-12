@@ -12,7 +12,7 @@ export function termsBody(): string {
 <h1>Terms of Service</h1>
 <p class="muted">Version ${TERMS_VERSION} &middot; Last updated ${POLICY_DATE}</p>
 
-<p>These terms govern your use of regoose (the &ldquo;Service&rdquo;), a web tool that turns a web page into clean, readable text. It is a personal portfolio project operated by Sam Liebl (&ldquo;I&rdquo;, &ldquo;me&rdquo;, the &ldquo;operator&rdquo;). By using the Service, signing in, or entering an access code, you agree to these terms and to the <a href="/privacy">Privacy Policy</a>. If you don’t agree, please don’t use it.</p>
+<p>These terms govern your use of regoose (the &ldquo;Service&rdquo;), a web tool that turns a web page into clean, readable text. It is a personal portfolio project operated by Reondir LLC, a limited liability company in the United States (&ldquo;Reondir&rdquo;, &ldquo;I&rdquo;, &ldquo;me&rdquo;, the &ldquo;operator&rdquo;). By using the Service, signing in, or entering an access code, you agree to these terms and to the <a href="/privacy">Privacy Policy</a>. If you don’t agree, please don’t use it.</p>
 
 <h2>1. Who may use it</h2>
 <p>You must be at least 16 years old and able to form a binding agreement where you live. You must not use the Service if you are barred from doing so by law.</p>
@@ -76,7 +76,7 @@ export function privacyBody(): string {
 <h1>Privacy Policy</h1>
 <p class="muted">Version ${TERMS_VERSION} &middot; Last updated ${POLICY_DATE}</p>
 
-<p>regoose is a small portfolio project operated by Sam Liebl, an individual in the United States, who is the controller of the personal data described here. I collect as little as I can. This policy says exactly what, why, for how long, who else touches it, and what your rights are. Contact: ${contactHtml()}.</p>
+<p>regoose is a small portfolio project operated by Reondir LLC, a limited liability company in the United States, which is the controller of the personal data described here. I collect as little as I can. This policy says exactly what, why, for how long, who else touches it, and what your rights are. Contact: ${contactHtml()}.</p>
 
 <h2>The short version</h2>
 <ul>

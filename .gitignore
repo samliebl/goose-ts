@@ -11,3 +11,7 @@ web/.data/
 
 # Notes for the next working session -- not part of the project
 .handoff/
+
+# Brand working files; only assets/brand is tracked
+assets/*
+!assets/brand/
