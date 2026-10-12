@@ -28,12 +28,15 @@
             class="brand-logo"
             src="/brand/wordmark-cream.svg"
             alt="regoose"
-            width="127"
-            height="34"
+            width="921"
+            height="204"
         /></a>
         <span class="brand-tag">A healthier reading experience.</span>
       </div>
-      <div class="topbar-actions">
+      <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="site-menu">
+        Menu
+      </button>
+      <div class="topbar-actions" id="site-menu">
         <a class="admin-link" href="/about">about</a>
         <a class="admin-link" href="/author">author</a>
         <a class="admin-link hidden" id="signin-link" href="/login">sign in</a>
@@ -46,6 +49,7 @@
           aria-label="Toggle light/dark theme"
         >
           <span class="theme-icon" aria-hidden="true">🌙</span>
+          <span class="theme-text">Theme</span>
         </button>
         <a
           class="repo-link"
@@ -155,8 +159,8 @@
 
       <section class="panel results-panel">
         <div class="empty-state" id="empty-state">
-          <img class="empty-mascot" src="/brand/mascot.png" alt="" width="300" height="272" />
-          <p>Nothing extracted yet.</p>
+          <img class="empty-mascot" src="/brand/mark.svg" alt="" width="168" height="168" />
+          <p class="empty-title">Nothing extracted yet.</p>
           <p class="muted">Enter a URL or paste HTML, then hit Extract.</p>
         </div>
 
@@ -190,8 +194,8 @@
 
     <footer class="site-footer">
       <p>
-        regoose is a portfolio project by Sam Liebl. No ads, no trackers, and no cookies unless you
-        sign in.
+        <img class="wm" src="/brand/wordmark-blue.svg" alt="regoose" width="921" height="204" />
+        is a portfolio project by Sam Liebl. No ads, no trackers and no cookies unless you sign in.
       </p>
       <p>
         <a href="/terms">Terms</a> <a href="/privacy">Privacy</a> <a href="/about">About</a>
@@ -202,5 +206,6 @@
 
     <script type="module" src="app.js"></script>
     <script src="/m.js" defer></script>
+    <script src="/brand/menu.js" defer></script>
   </body>
 </html>

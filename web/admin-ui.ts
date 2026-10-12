@@ -156,7 +156,7 @@ ${barChart(
 
 <div class="grid2">
 ${countTable("Pages", s.pages)}
-${countTable("Referring sites", s.referrers, "No referrers (direct visits, or none sent).")}
+${countTable("Referring sites", s.referrers, "No referrers (direct visits or none sent).")}
 ${countTable("Devices", s.devices)}
 ${countTable("Screen width", s.viewports)}
 ${countTable("Browsers", s.browsers)}
@@ -174,7 +174,7 @@ ${countTable("Sites visitors asked for that the demo won’t fetch", s.wantedHos
 <div class="card"><h3 style="margin-top:0">Funnel (visitors, unique per day, summed)</h3>
 <p style="margin:0">Visited <strong>${s.funnel.visited}</strong> &rarr; ran an extraction <strong>${s.funnel.extracted}</strong> (${pct(s.funnel.extracted, s.funnel.visited)}) &rarr; downloaded a result <strong>${s.funnel.exported}</strong> (${pct(s.funnel.exported, s.funnel.extracted)})</p></div>
 
-<p class="muted">Analytics are first-party and cookieless. Visitors are a hash that resets daily, so the same person on two days counts twice, and nobody can be followed across days. IP addresses, full URLs, and member identities are never recorded; the owner’s own activity and bots are excluded; Do Not Track / Global Privacy Control visitors appear only in anonymous totals. Events are deleted after 90 days. The same numbers are available as JSON at <code>/api/admin/analytics?days=${days}</code>.</p>`;
+<p class="muted">Analytics are first-party and cookieless. Visitors are a hash that resets daily, so the same person on two days counts twice, and nobody can be followed across days. IP addresses, full URLs and member identities are never recorded; the owner’s own activity and bots are excluded; Do Not Track / Global Privacy Control visitors appear only in anonymous totals. Events are deleted after 90 days. The same numbers are available as JSON at <code>/api/admin/analytics?days=${days}</code>.</p>`;
 }
 
 // --- Members ---
@@ -208,7 +208,7 @@ export function membersBody(members: Member[], owner: string, flash?: string): s
   return `<h1>Members</h1>
 ${flashHtml(flash)}
 <div class="card"><h3 style="margin-top:0">Invite someone</h3>
-<p class="muted" style="margin-top:0">Enter their email. They get a one-time access code, enter it once, and from then on come back with an emailed sign-in link. That’s all they have to do.</p>
+<p class="muted" style="margin-top:0">Enter their email. They get a one-time access code, enter it once and from then on come back with an emailed sign-in link. That’s all they have to do.</p>
 <form class="row" method="post" action="/api/admin/invite">
 <input type="email" name="email" placeholder="their@email.com" required aria-label="Their email address">
 <input type="text" name="note" placeholder="Private note (optional)" maxlength="300" aria-label="Private note">

@@ -175,6 +175,12 @@ app.get("/author", staticPage("About the author", authorBody));
 app.get("/terms", staticPage("Terms of Service", termsBody));
 app.get("/privacy", staticPage("Privacy Policy", privacyBody));
 app.use("/brand", express.static(join(here, "public", "brand"), { maxAge: "1d" }));
+// Typefaces are shared by the sign-in pages, so they sit outside the session gate.
+app.use("/fonts", express.static(join(here, "public", "fonts"), { maxAge: "7d" }));
+app.get("/fonts.css", (_req, res) => {
+  res.setHeader("Cache-Control", "public, max-age=3600");
+  res.sendFile(join(here, "public", "fonts.css"));
+});
 app.use("/author", express.static(join(here, "public", "author"), { maxAge: "1d" }));
 
 app.get("/robots.txt", (_req, res) => {

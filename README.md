@@ -1,6 +1,6 @@
 # goose-ts
 
-A modern TypeScript/ESM port of [python-goose](https://github.com/grangier/python-goose) for Node.js: pull the article text, main image, metadata, tags, authors, publish date, tweets, and embedded videos out of a web page.
+A modern TypeScript/ESM port of [python-goose](https://github.com/grangier/python-goose) for Node.js: pull the article text, main image, metadata, tags, authors, publish date, tweets and embedded videos out of a web page.
 
 ```ts
 import { Goose } from "goose-ts";
@@ -29,7 +29,7 @@ Requires Node.js 18.17+ (uses native `fetch`, `AbortSignal.timeout`, and `Intl.S
 
 ## Three ways to use this
 
-goose-ts, the CLI, and the local web dashboard's HTTP API are three clients of the same core --
+goose-ts, the CLI and the local web dashboard's HTTP API are three clients of the same core --
 extraction (`src/`) and export/formatting (`src/export.ts`) live in one place, and none of the
 three has any capability the others lack. The web UI in particular is not a special case: its own
 download buttons call the same `/api/export` route documented below, same as any other client
@@ -71,9 +71,9 @@ The local web dashboard (see below) is really a small Express server with two JS
 both usable from anything that can make an HTTP request -- not just the bundled frontend.
 
 - **`POST /api/extract`** -- `{ url? , rawHtml?, config? }` (at least one of `url`/`rawHtml`) ->
-  `{ ok, elapsedMs, article }`, or `{ ok: false, error }` with a status that says why: 400 (URL
+  `{ ok, elapsedMs, article }` or `{ ok: false, error }` with a status that says why: 400 (URL
   refused), 403 (the site's robots.txt disallows it), 413 (too large), 429 (rate limited), 502
-  (the fetch failed or the site refused us), 503 (busy, or a daily limit reached), 504 (took too
+  (the fetch failed or the site refused us), 503 (busy or a daily limit reached), 504 (took too
   long). `article` is the same shape as `Goose#extract()`'s `article.infos`.
 - **`POST /api/export`** -- pure formatting, no fetching: `{ article, label, format? }` for one
   file, or `{ articles: [{ article, label }, ...], format?, zip? }` for several (always zipped
@@ -97,20 +97,20 @@ once. Emailed links open a confirmation page and are only spent by a button pres
 that pre-fetch links can't use them up.
 
 **Admin (`/admin`, owner only).** Overview (analytics and a setup checklist), Members (invite by
-email, resend, sign out, remove) and Requests (approve and email a code, or decline). Everything the
+email, resend, sign out, remove) and Requests (approve and email a code or decline). Everything the
 pages do is also available as JSON: `GET /api/admin/analytics?days=30`, `GET /api/admin/members`,
 `GET /api/admin/requests`, and `POST /api/admin/invite`, `/members/resend`, `/members/remove`,
 `/members/signout`, `/requests/approve`, `/requests/decline`.
 
 **Stored data.** One small file on the Fly volume, encrypted at rest (AES-256-GCM) with `DATA_KEY`,
-holding member emails and a few dates and counters, pending access requests, and hashed codes and
+holding member emails and a few dates and counters, pending access requests and hashed codes and
 links (never the codes themselves). A wrong key stops the server rather than being read as an empty
 file. Retention is enforced at startup and daily: spent codes 30 days, decided requests 90, analytics 90. Members can delete their own account at `/account`, which erases everything held about them.
 
 **Analytics** (`web/analytics.ts`) are first-party and cookieless. A visitor is a hash of IP and
 browser with a salt that is replaced daily and then discarded, so people can be counted within a day
 but never followed across days. IP addresses, full URLs, raw User-Agents and member identities are
-never recorded (only the hostname of a fetched page, only coarse device/browser/OS families, and a
+never recorded (only the hostname of a fetched page, only coarse device/browser/OS families and a
 tier of "anon" or "member"); the owner's own activity and bots are excluded; Do Not Track and Global
 Privacy Control visitors appear only in anonymous totals. The Terms and Privacy Policy
 (`web/legal.ts`) describe exactly this, and `test/pages.test.ts` fails if the retention numbers in the
@@ -228,7 +228,7 @@ If you're fetching on behalf of other people -- a web service, say -- turn on `r
 set an identifying `browserUserAgent`, and install a `urlGuard` that refuses private and internal
 addresses. A bare `fetch` follows redirects anywhere and images found inside a page are fetched
 too; the guard is what stops a hostile page from steering the fetcher at your own network. Every
-request goes through one function (`src/safeFetch.ts`), so the guard, the redirect cap, and the
+request goes through one function (`src/safeFetch.ts`), so the guard, the redirect cap and the
 size caps apply uniformly.
 
 ## Client-side-rendered pages
@@ -278,7 +278,7 @@ the work before it:
 - **[Goose](https://github.com/GravityLabs/goose)** (original, Java then Scala) — Gravity.com /
   Gravity Labs.
 - **[python-goose](https://github.com/grangier/python-goose)** — Xavier Grangier (for Recrutae).
-  The stopword lists, known-image CSS heuristics, and test fixtures in this repo are carried
+  The stopword lists, known-image CSS heuristics and test fixtures in this repo are carried
   over from here.
 - **[node-unfluff](https://github.com/ageitgey/node-unfluff)** — Adam Geitgey. An earlier,
   independent JS reimagining of goose's heuristics; consulted as prior art for what a

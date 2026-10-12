@@ -3,10 +3,10 @@
    brown are for illustration only, never text. */
 :root {
   color-scheme: light;
-  --bg: #fcf6e6;
+  --bg: #ffffff;
   --bg-panel: #ffffff;
   --bg-raised: #fcf6e6;
-  --border: #d8d2c0;
+  --border: #e7e1d0;
   --text: #141b2d;
   --text-muted: #4a5470;
   --accent: #0a66b8;
@@ -14,7 +14,7 @@
   --btn: #0a66b8;
   --btn-text: #ffffff;
   --head: #1594e9;
-  --head-text: #141b2d;
+  --head-text: #fcf6e6;
   --good: #1a6b36;
   --bad: #b3261e;
 
@@ -97,20 +97,37 @@ details[open] > summary::before {
   transform: rotate(45deg);
 }
 
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
 body {
   margin: 0;
   background: var(--bg);
   color: var(--text);
   font-family: var(--font-sans);
   font-size: 15px;
-  line-height: 1.5;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  font-kerning: normal;
+  font-variant-ligatures: common-ligatures;
+}
+
+img.wm {
+  height: 0.84em;
+  width: auto;
+  vertical-align: -0.2265em;
 }
 
 .topbar {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 10px 24px;
+  gap: 16px;
+  padding: 14px 32px;
   border-bottom: 2px solid #000;
   background: var(--head);
   color: var(--head-text);
@@ -119,72 +136,108 @@ body {
 .brand {
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 18px;
+}
+
+.brand a {
+  display: flex;
+  align-items: center;
 }
 
 .brand-logo {
   display: block;
-  height: 34px;
+  height: 32px;
   width: auto;
 }
 
 .brand-tag {
   color: var(--head-text);
   font-size: 13px;
+  font-weight: 500;
 }
 
 .repo-link,
-.admin-link {
+.admin-link,
+.theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
+  padding: 0 16px;
   color: var(--head-text);
   text-decoration: none;
+  font: inherit;
   font-size: 14px;
-  border: 1px solid rgba(20, 27, 45, 0.55);
-  border-radius: 6px;
-  padding: 5px 11px;
+  font-weight: 600;
+  background: transparent;
+  border: 1.5px solid var(--head-text);
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.theme-toggle {
+  width: 40px;
+  padding: 0;
+  gap: 10px;
+  font-size: 15px;
+  line-height: 1;
+}
+
+.theme-text {
+  display: none;
 }
 
 .repo-link:hover,
-.admin-link:hover {
-  color: var(--head-text);
-  background: rgba(255, 255, 255, 0.25);
-  border-color: var(--head-text);
+.admin-link:hover,
+.theme-toggle:hover {
+  background: rgba(252, 246, 230, 0.2);
 }
 
 .topbar-actions {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
 }
 
-.theme-toggle {
-  display: flex;
+.menu-toggle {
+  display: none;
   align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 16px;
+  color: var(--head-text);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
   background: transparent;
-  border: 1px solid rgba(20, 27, 45, 0.55);
-  border-radius: 6px;
+  border: 1.5px solid var(--head-text);
+  border-radius: 10px;
   cursor: pointer;
-  font-size: 15px;
-  line-height: 1;
-  padding: 0;
 }
 
-.theme-toggle:hover {
-  background: rgba(255, 255, 255, 0.25);
-  border-color: var(--head-text);
+.menu-toggle::after {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: translateY(-2px) rotate(45deg);
+  transition: transform 0.15s ease;
+}
+
+.topbar.menu-open .menu-toggle::after {
+  transform: translateY(1px) rotate(-135deg);
 }
 
 .layout {
   display: grid;
-  grid-template-columns: 400px 1fr;
+  grid-template-columns: 440px 1fr;
   gap: 0;
-  min-height: calc(100vh - 59px);
+  min-height: calc(100vh - 69px);
 }
 
 .panel {
-  padding: 24px;
+  padding: 32px;
 }
 
 .input-panel {
@@ -192,7 +245,7 @@ body {
   background: var(--bg-panel);
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 28px;
   position: sticky;
   top: 0;
   align-self: start;
@@ -204,7 +257,7 @@ body {
   display: flex;
   gap: 4px;
   background: var(--bg-raised);
-  border-radius: 8px;
+  border-radius: 12px;
   padding: 4px;
 }
 
@@ -213,16 +266,18 @@ body {
   background: transparent;
   border: none;
   color: var(--text-muted);
-  padding: 8px 10px;
-  border-radius: 6px;
+  padding: 9px 12px;
+  border-radius: 9px;
   cursor: pointer;
   font-size: 14px;
   font-family: inherit;
 }
 
 .tab.active {
-  background: var(--accent-soft);
+  background: var(--bg-panel);
   color: var(--accent);
+  font-weight: 600;
+  box-shadow: 0 1px 2px rgba(20, 27, 45, 0.14);
 }
 
 .tab-content.hidden,
@@ -233,7 +288,7 @@ body {
 .field {
   display: flex;
   flex-direction: column;
-  gap: 7px;
+  gap: 10px;
   min-width: 0;
 }
 
@@ -246,8 +301,9 @@ body {
 
 .field-hint {
   color: var(--text-muted);
-  font-size: 12px;
-  line-height: 1.4;
+  font-size: 12.5px;
+  line-height: 1.55;
+  margin-top: 6px;
 }
 
 input[type="url"],
@@ -258,8 +314,8 @@ select {
   background: var(--bg-raised);
   border: 1px solid var(--border);
   color: var(--text);
-  border-radius: 6px;
-  padding: 9px 11px;
+  border-radius: 10px;
+  padding: 11px 13px;
   font-family: inherit;
   font-size: 14px;
 }
@@ -283,8 +339,8 @@ select:disabled {
 
 .config {
   border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 0 14px;
+  border-radius: 12px;
+  padding: 0 18px;
 }
 
 .config summary {
@@ -308,8 +364,8 @@ select:disabled {
      so a wide label (e.g. "HTTP timeout (ms)") would otherwise claim more
      than half the row and force its shorter sibling to wrap instead. */
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  gap: 16px 14px;
-  padding: 2px 0 14px;
+  gap: 20px 16px;
+  padding: 4px 0 20px;
 }
 
 .field.full,
@@ -387,21 +443,33 @@ select:disabled {
 }
 
 .empty-state {
-  height: 60vh;
+  min-height: 60vh;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   color: var(--text-muted);
   text-align: center;
-  gap: 4px;
+  padding: 48px 24px;
+}
+
+.empty-state p {
+  margin: 0;
+}
+
+.empty-title {
+  color: var(--text);
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  margin-bottom: 8px !important;
 }
 
 .empty-mascot {
   display: block;
-  width: min(300px, 70%);
+  width: 168px;
   height: auto;
-  margin: 0 auto 12px;
+  margin: 0 auto 32px;
 }
 
 .muted {
@@ -469,7 +537,7 @@ select:disabled {
 .result-item {
   border: 1px solid var(--border);
   border-radius: 8px;
-  background: var(--bg-raised);
+  background: var(--bg-panel);
 }
 
 .result-item summary {
@@ -776,30 +844,51 @@ dl dd {
    its subtitle -- nothing here changes structure (that already happened at
    900px above), just density. */
 @media (max-width: 640px) {
-  /* The links can't all fit beside the brand at this width, so they drop to
-     their own row (and wrap again if they must) rather than running off the
-     edge of the screen. Touch targets grow to 44px, the usual minimum. */
+  /* The links collapse into a menu under the header. Rows are 52px tall,
+     comfortably past the 44px touch minimum. */
   .topbar {
-    flex-wrap: wrap;
-    align-items: center;
-    row-gap: 4px;
-    padding: 8px 16px;
+    padding: 10px 16px;
+  }
+  .menu-toggle {
+    display: inline-flex;
   }
   .topbar-actions {
-    flex-wrap: wrap;
-    gap: 4px 6px;
+    display: none;
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 100%;
+    z-index: 10;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0;
+    padding: 4px 16px 12px;
+    background: var(--head);
+    border-bottom: 2px solid #000;
+  }
+  .topbar.menu-open .topbar-actions {
+    display: flex;
+  }
+  .topbar-actions > .admin-link,
+  .topbar-actions > .repo-link,
+  .topbar-actions > .theme-toggle {
+    justify-content: flex-start;
     width: 100%;
+    min-height: 52px;
+    padding: 0 4px;
+    font-size: 16px;
+    border: 0;
+    border-bottom: 1px solid rgba(252, 246, 230, 0.4);
+    border-radius: 0;
   }
-  .admin-link,
-  .repo-link {
-    display: inline-flex;
-    align-items: center;
-    min-height: 44px;
-    padding: 0 10px;
+  .topbar-actions > .repo-link {
+    border-bottom: 0;
   }
-  .theme-toggle {
-    width: 44px;
-    height: 44px;
+  .topbar-actions > .hidden {
+    display: none;
+  }
+  .theme-text {
+    display: inline;
   }
   .brand-tag {
     display: none;
@@ -852,10 +941,10 @@ dl dd {
 }
 
 .public-note {
-  margin: 0 0 14px;
-  padding: 10px 12px;
+  margin: 0;
+  padding: 14px 16px;
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: 12px;
   background: var(--bg-panel);
   color: var(--text-muted);
   font-size: 14px;
@@ -870,8 +959,8 @@ dl dd {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 8px;
-  margin: 0 0 14px;
+  gap: 10px;
+  margin: 0;
   color: var(--text-muted);
   font-size: 14px;
 }
@@ -899,7 +988,7 @@ dl dd {
 .site-footer {
   max-width: 1400px;
   margin: 0 auto;
-  padding: 20px 24px 32px;
+  padding: 28px 32px 48px;
   color: var(--text-muted);
   font-size: 14px;
 }
@@ -910,6 +999,7 @@ dl dd {
 
 .site-footer a {
   display: inline-block;
-  padding: 12px 8px;
+  padding: 12px 0;
+  margin-right: 18px;
   color: var(--text-muted);
 }

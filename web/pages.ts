@@ -15,7 +15,7 @@ export function aboutBody(): string {
   const member = LIMITS.member;
   const domains = OPEN_SOURCE_DOMAINS.map((d) => `<code>${escapeHtml(d)}</code>`).join(", ");
 
-  return `<img class="hero" src="/brand/mascot.png" alt="" width="230" height="208">
+  return `<img class="hero" src="/brand/mark.svg" alt="" width="190" height="190">
 <h1>About regoose</h1>
 <p>regoose turns a web page into clean, readable text: the article, without the clutter. It’s a portfolio project built on <a href="${GITHUB_REPO_URL}" rel="noopener">goose-ts</a>, an open-source TypeScript port of python-goose, and the whole thing &mdash; library, command line tool and this site &mdash; is <a href="${GITHUB_REPO_URL}" rel="noopener">open source</a>.</p>
 <p><a class="btn" href="/">Open the tool</a> &nbsp; <a href="/request-access">Request full access</a> &middot; <a href="/redeem">I have an access code</a></p>
@@ -23,34 +23,34 @@ export function aboutBody(): string {
 <h2>What’s limited about this demo, and why</h2>
 <p>The public demo is deliberately smaller than the tool. Fetching other people’s pages on behalf of strangers is something I want to do carefully, and this runs on one small server paid for by one person. Here is what’s restricted and the reasoning behind each limit.</p>
 <ul>
-  <li><strong>Only a short list of sites can be fetched by URL.</strong> The demo fetches from sites that publish openly licensed or public-domain material and where I’ve checked extraction works: ${domains}. <em>Why:</em> a tool that fetches any address for anonymous visitors can be pointed at sites that don’t want to be scraped, turned into a way to bypass paywalls, or used as a relay to attack other servers. Restricting the demo to sites that welcome reuse removes that risk entirely and keeps me on the right side of other people’s terms.</li>
+  <li><strong>Only a short list of sites can be fetched by URL.</strong> The demo fetches from sites that publish openly licensed or public-domain material and where I’ve checked extraction works: ${domains}. <em>Why:</em> a tool that fetches any address for anonymous visitors can be pointed at sites that don’t want to be scraped, turned into a way to bypass paywalls or used as a relay to attack other servers. Restricting the demo to sites that welcome reuse removes that risk entirely and keeps me on the right side of other people’s terms.</li>
   <li><strong>Pasting HTML works for any page.</strong> If you’ve already got a page’s source, paste it. <em>Why:</em> nothing is fetched from anywhere, so there’s nobody to impose on.</li>
   <li><strong>The demo doesn’t fetch or score images.</strong> <em>Why:</em> every image is another request to someone else’s server, and image scoring is the slowest, most abusable part of an extraction. Signed-in members get image detection.</li>
-  <li><strong>Usage is rate limited:</strong> ${anon.ratePerWindow} extractions per ${anon.windowMs / 60_000} minutes per visitor, and ${anon.dailyCap} a day across everyone in the public demo. Members get ${member.ratePerWindow} per ${member.windowMs / 60_000} minutes. <em>Why:</em> it keeps the service available to everyone, stops runaway automation, and puts a ceiling on what it costs to run. When a limit is reached, the page tells you and you can try again later.</li>
+  <li><strong>Usage is rate limited:</strong> ${anon.ratePerWindow} extractions per ${anon.windowMs / 60_000} minutes per visitor, and ${anon.dailyCap} a day across everyone in the public demo. Members get ${member.ratePerWindow} per ${member.windowMs / 60_000} minutes. <em>Why:</em> it keeps the service available to everyone, stops runaway automation and puts a ceiling on what it costs to run. When a limit is reached, the page tells you and you can try again later.</li>
   <li><strong>Size limits:</strong> pages up to ${mb(anon.maxResponseBytes)} (${mb(member.maxResponseBytes)} for members) and pasted HTML up to ${mb(anon.maxRawHtmlChars)}. <em>Why:</em> the server is small, and a very large page could take it down for everyone.</li>
-  <li><strong>It obeys robots.txt.</strong> If a site’s robots.txt asks automated tools to stay away from a page (or can’t be read), regoose won’t fetch it, and says why. News sites often do this. <em>Why:</em> it’s the established way for a site to say &ldquo;no&rdquo;, and respecting it is the right default.</li>
+  <li><strong>It obeys robots.txt.</strong> If a site’s robots.txt asks automated tools to stay away from a page (or can’t be read), regoose won’t fetch it and says why. News sites often do this. <em>Why:</em> it’s the established way for a site to say &ldquo;no&rdquo;, and respecting it is the right default.</li>
   <li><strong>It doesn’t run JavaScript.</strong> Pages that build their content in the browser can come back empty or thin. <em>Why:</em> that needs a full headless browser, which is far heavier and costlier than this project is meant to be.</li>
   <li><strong>It doesn’t get around paywalls or logins.</strong> It sees what an anonymous visitor would see. <em>Why:</em> that’s the line between a reading tool and a circumvention tool.</li>
   <li><strong>Extraction is heuristic.</strong> It’s an algorithm that guesses which part of a page is the article, so some pages (live blogs, index pages, unusual layouts) come out incomplete.</li>
-  <li><strong>Nothing is saved.</strong> There’s no history, library, or bookmarking. <em>Why:</em> not storing what people read is a privacy feature, and it keeps the project simple.</li>
+  <li><strong>Nothing is saved.</strong> There’s no history, library or bookmarking. <em>Why:</em> not storing what people read is a privacy feature, and it keeps the project simple.</li>
   <li><strong>The server naps when idle,</strong> so the first visit after a quiet spell can take a few seconds to wake up.</li>
 </ul>
 
 <h2>Full access</h2>
-<p>Full access lifts the URL list (any publicly reachable page), turns on image detection, and raises the limits. It’s by invitation: <a href="/request-access">tell me a bit about what you’d like to use it for</a> and I’ll get back to you by email with an access code. There are no passwords &mdash; you enter the code once, and afterwards you can return with an emailed sign-in link.</p>
+<p>Full access lifts the URL list (any publicly reachable page), turns on image detection and raises the limits. It’s by invitation: <a href="/request-access">tell me a bit about what you’d like to use it for</a> and I’ll get back to you by email with an access code. There are no passwords &mdash; you enter the code once, and afterwards you can return with an emailed sign-in link.</p>
 
 <h2>How it behaves toward other sites</h2>
 <ul>
   <li><strong>It identifies itself.</strong> Requests carry the User-Agent <code>${escapeHtml(SERVER_USER_AGENT)}</code>, which points to this page.</li>
   <li><strong>It respects robots.txt</strong>, as above.</li>
-  <li><strong>One page per request.</strong> It doesn’t crawl, follow links, or run in the background.</li>
+  <li><strong>One page per request.</strong> It doesn’t crawl, follow links or run in the background.</li>
   <li><strong>It refuses private and internal network addresses,</strong> on every redirect and for every image.</li>
 </ul>
 
 <h2>Want regoose to stay away from your site?</h2>
 <p>Add a rule for <code>regoose</code> to your <code>robots.txt</code> (<code>User-agent: regoose</code> then <code>Disallow: /</code>) and it stops immediately. Or contact me at ${contactHtml()} and I’ll block it by hand.</p>
 
-<p class="muted">See also the <a href="/terms">Terms of Service</a>, the <a href="/privacy">Privacy Policy</a>, and the <a href="/author">author page</a>.</p>`;
+<p class="muted">See also the <a href="/terms">Terms of Service</a>, the <a href="/privacy">Privacy Policy</a> and the <a href="/author">author page</a>.</p>`;
 }
 
 // --- Author ---
