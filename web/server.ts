@@ -6,31 +6,32 @@ import {
   Goose,
   renderArticleExport,
   renderArticlesZip,
+  type Article,
   type ArticleInfos,
   type ConfigurationOptions,
   type ExportableArticle,
   type ExportFormat,
 } from "../src/index.js";
+import { findMember, purgeStaleData, recordMemberExtraction, touchMember } from "./access.js";
 import {
-  addAllowedEmail,
-  consumeLoginToken,
-  createSessionCookieValue,
-  isOwner,
-  listAllowedEmails,
-  purgeExpiredTokens,
-  removeAllowedEmail,
-  requestLoginLink,
-  sendLoginNotification,
-  verifySessionCookieValue,
-  type Session,
-} from "./auth.js";
-import { aboutBody } from "./about.js";
-import { parseCookies, serializeCookie } from "./cookies.js";
+  bucketViewport,
+  classifyUserAgent,
+  discardStaleSalt,
+  flushAnalytics,
+  normalizePath,
+  primaryLanguage,
+  purgeOldAnalytics,
+  recordEvent,
+  referrerHost,
+  visitorHash,
+} from "./analytics.js";
 import { consumeDailyUsage } from "./db.js";
-import { escapeHtml, page as html } from "./html.js";
+import { privacyBody, termsBody } from "./legal.js";
+import { aboutBody, authorBody } from "./pages.js";
 import {
   buildConfiguration,
   createUrlGuard,
+  DEMO_ONLY_MESSAGE,
   EXAMPLE_URLS,
   LIMITS,
   OPEN_SOURCE_DOMAINS,
@@ -38,6 +39,12 @@ import {
   type TierLimits,
 } from "./policy.js";
 import { createRateLimiter } from "./rate-limit.js";
+import { registerAccessRoutes, render } from "./routes-access.js";
+import { registerAdminRoutes } from "./routes-admin.js";
+import { isProduction, ownerEmail } from "./secrets.js";
+import { getSession, renewIfDue, sessionOf, type AuthedRequest } from "./session.js";
+import { TERMS_VERSION } from "./site.js";
+import { optedOut, track } from "./track.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const PORT = Number(process.env.PORT ?? 4173);
@@ -46,13 +53,13 @@ const PORT = Number(process.env.PORT ?? 4173);
 // isn't reachable from Fly's proxy at all, so this has to be configurable,
 // not hardcoded, for a public deploy to work in the first place.
 const HOST = process.env.HOST ?? "127.0.0.1";
-const SESSION_COOKIE = "regoose_session";
-const IS_PROD = process.env.NODE_ENV === "production";
+const IS_PROD = isProduction();
 
 /**
  * Off by default. Off: every page and API call requires a signed-in session,
- * exactly as before. On: visitors without a session get the public demo
- * (see policy.ts for what that tier can and can't do). Flipping it is a
+ * exactly as before (except the pages people need in order to get in, and
+ * the legal pages). On: visitors without a session get the public demo (see
+ * policy.ts for what that tier can and can't do). Flipping it is a
  * deploy-time decision (PUBLIC_MODE=true in fly.toml), not a code change.
  */
 const PUBLIC_MODE = process.env.PUBLIC_MODE === "true";
@@ -61,9 +68,25 @@ const PUBLIC_MODE = process.env.PUBLIC_MODE === "true";
 const MAX_CONCURRENT_EXTRACTIONS = 2;
 let activeExtractions = 0;
 
-type AuthedRequest = Request & { session: Session | null };
+// --- Housekeeping: enforce retention at startup and once a day ---
 
-purgeExpiredTokens();
+function runMaintenance(): void {
+  try {
+    const purged = purgeStaleData();
+    const analytics = purgeOldAnalytics();
+    discardStaleSalt();
+    if (purged.invites || purged.requests || purged.tokens || analytics) {
+      console.log(
+        `retention: removed ${purged.invites} codes, ${purged.requests} requests, ${purged.tokens} sign-in links, ${analytics} analytics days`,
+      );
+    }
+  } catch (error) {
+    console.error("maintenance failed:", error instanceof Error ? error.message : String(error));
+  }
+}
+runMaintenance();
+setInterval(runMaintenance, 24 * 3600_000).unref();
+recordEvent({ type: "boot", tier: "system" });
 
 const app = express();
 app.disable("x-powered-by");
@@ -99,43 +122,59 @@ app.use((_req, res, next) => {
   next();
 });
 
+// Cross-site request forgery: a state-changing request from a browser must
+// come from this site. SameSite=Lax on the session cookie already keeps it
+// from being sent on cross-site POSTs; this refuses them outright as well.
+app.use((req, res, next) => {
+  if (req.method === "GET" || req.method === "HEAD" || req.method === "OPTIONS") return next();
+  const origin = req.get("origin");
+  let sameSite = true;
+  if (origin) {
+    try {
+      sameSite = new URL(origin).host === req.get("host");
+    } catch {
+      sameSite = false;
+    }
+  } else if (req.get("sec-fetch-site") === "cross-site") {
+    sameSite = false;
+  }
+  if (sameSite) return next();
+  if (req.path.startsWith("/api/")) {
+    res.status(403).json({ ok: false, error: "Cross-site requests aren't allowed." });
+  } else {
+    res.status(403).send("Cross-site requests aren't allowed.");
+  }
+});
+
 /** The visitor's real IP, for rate limiting. On Fly that's the Fly-Client-IP header, which the edge sets itself and a client can't forge. */
 function clientIp(req: Request): string {
   return (IS_PROD ? req.get("fly-client-ip") : undefined) || req.ip || "unknown";
 }
 
-function getSession(req: Request): Session | null {
-  const cookies = parseCookies(req.headers.cookie);
-  return verifySessionCookieValue(cookies[SESSION_COOKIE]);
-}
-
-function setSessionCookie(res: Response, email: string): void {
-  res.setHeader(
-    "Set-Cookie",
-    serializeCookie(SESSION_COOKIE, createSessionCookieValue(email), {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "Lax",
-      path: "/",
-      maxAge: 30 * 24 * 3600,
-    }),
-  );
-}
-
-function clearSessionCookie(res: Response): void {
-  res.setHeader(
-    "Set-Cookie",
-    serializeCookie(SESSION_COOKIE, "", { httpOnly: true, path: "/", maxAge: 0 }),
-  );
-}
-
-// -- Public auth routes: reachable without a session --------------------
-
-const loginRateLimit = createRateLimiter(5, 10 * 60_000); // 5 requests / 10 min / IP
-
-app.get("/about", (_req, res) => {
-  res.send(html("About regoose", aboutBody(), { wide: true }));
+// Everyone's session is resolved up front, so the public pages can adapt to
+// who's looking. A session that's getting old is renewed here, so people who
+// keep using the site never have to sign in again.
+app.use((req, res, next) => {
+  const session = getSession(req);
+  (req as AuthedRequest).session = session;
+  if (session) {
+    renewIfDue(res, session);
+    if (!session.isOwner) touchMember(session.email);
+  }
+  next();
 });
+
+// -- Pages anyone may see, signed in or not --------------------------------
+
+const staticPage = (title: string, body: () => string) => (req: Request, res: Response) => {
+  render(req, res, title, body());
+};
+
+app.get("/about", staticPage("About regoose", aboutBody));
+app.get("/author", staticPage("About the author", authorBody));
+app.get("/terms", staticPage("Terms of Service", termsBody));
+app.get("/privacy", staticPage("Privacy Policy", privacyBody));
+app.use("/author", express.static(join(here, "public", "author"), { maxAge: "1d" }));
 
 app.get("/robots.txt", (_req, res) => {
   res
@@ -147,98 +186,79 @@ app.get("/robots.txt", (_req, res) => {
         "Disallow: /api/",
         "Disallow: /admin",
         "Disallow: /login",
+        "Disallow: /redeem",
+        "Disallow: /account",
         "",
       ].join("\n"),
     );
 });
 
-app.get("/login", (_req, res) => {
-  res.send(
-    html(
-      "Sign in",
-      `<h1>regoose</h1>
-       <form method="post" action="/api/auth/request-link">
-         <input type="email" name="email" placeholder="you@example.com" required autofocus>
-         <button type="submit">Send link</button>
-       </form>
-       <p class="muted">If that address is allowed, a sign-in link will be emailed to it. Links expire in 15 minutes and work once.</p>
-       ${PUBLIC_MODE ? '<p class="muted"><a href="/">&larr; Back to the public demo</a></p>' : ""}`,
-    ),
-  );
+// The visit counter. A separate file (not inline) because of the CSP.
+app.get("/m.js", (_req, res) => {
+  res.setHeader("Cache-Control", "public, max-age=3600");
+  res.sendFile(join(here, "public", "m.js"));
 });
 
-app.post("/api/auth/request-link", async (req, res) => {
-  if (!loginRateLimit(clientIp(req))) {
-    res.status(429).send(html("Too many requests", "<p>Slow down and try again shortly.</p>"));
-    return;
-  }
-
-  const email = typeof req.body?.email === "string" ? req.body.email : "";
-  const baseUrl = `${req.protocol}://${req.get("host")}`;
+const beaconLimit = createRateLimiter(60, 60_000);
+app.post("/api/beacon", express.json({ limit: "2kb" }), (req, res) => {
+  res.status(204).end();
   try {
-    if (email) await requestLoginLink(email, baseUrl);
+    const session = sessionOf(req);
+    if (session?.isOwner || optedOut(req) || !beaconLimit(clientIp(req))) return;
+    const ua = req.get("user-agent") ?? "";
+    const client = classifyUserAgent(ua);
+    if (client.dev === "bot") return;
+    const body = (req.body ?? {}) as Record<string, unknown>;
+    recordEvent({
+      type: "pageview",
+      tier: session ? "member" : "anon",
+      v: visitorHash(clientIp(req), ua),
+      path: normalizePath(body["p"]),
+      ref: referrerHost(body["r"], req.get("host") ?? ""),
+      dev: client.dev,
+      br: client.br,
+      os: client.os,
+      lang: primaryLanguage(req.get("accept-language")),
+      vw: bucketViewport(body["w"]),
+      cs: body["d"] === true ? "dark" : "light",
+      touch: body["t"] === true,
+    });
   } catch {
-    // Fall through to the identical response below regardless -- see
-    // requestLoginLink's doc comment on why success/failure/not-allowed
-    // must never be distinguishable from the outside.
+    /* analytics must never matter to the visitor */
   }
-  res.send(
-    html(
-      "Check your email",
-      `<h1>Check your email</h1><p>If ${email ? "that address is" : "you entered an address that's"} allowed, a sign-in link is on its way.</p>`,
-    ),
-  );
 });
 
-app.get("/api/auth/verify", async (req, res) => {
-  const token = typeof req.query.token === "string" ? req.query.token : "";
-  const email = token ? consumeLoginToken(token) : null;
-
-  if (!email) {
-    res
-      .status(400)
-      .send(
-        html(
-          "Link expired",
-          '<p>That link is invalid, expired, or already used. <a href="/login">Request a new one</a>.</p>',
-        ),
-      );
-    return;
-  }
-
-  setSessionCookie(res, email);
-  void sendLoginNotification(email); // fire-and-forget -- see its own doc comment
-  // Redirect rather than render here, so the token doesn't linger in the
-  // browser's address bar or history once it's been spent.
-  res.redirect(302, "/");
-});
-
-app.post("/api/auth/logout", (_req, res) => {
-  clearSessionCookie(res);
-  res.redirect(302, "/login");
-});
+// Sign-in, access codes, access requests, the account page.
+registerAccessRoutes(app, { clientIp, publicMode: PUBLIC_MODE });
 
 // -- Everything below here needs a session, unless PUBLIC_MODE is on ------
 
 app.use((req: Request, res: Response, next: NextFunction) => {
-  const session = getSession(req);
-  (req as AuthedRequest).session = session;
-  if (session || PUBLIC_MODE) {
-    next();
+  const session = sessionOf(req);
+  if (!session && !PUBLIC_MODE) {
+    if (req.path.startsWith("/api/")) {
+      res.status(401).json({ ok: false, error: "Please sign in." });
+    } else {
+      res.redirect(302, "/login");
+    }
     return;
   }
-  if (req.path.startsWith("/api/")) {
-    res.status(401).json({ ok: false, error: "Please sign in." });
-    return;
+
+  // Members must have accepted the current terms.
+  if (session && !session.isOwner && req.path !== "/api/auth/logout") {
+    if (findMember(session.email)?.termsVersion !== TERMS_VERSION) {
+      if (req.path.startsWith("/api/")) {
+        res.status(403).json({ ok: false, error: "Please accept the updated terms to continue." });
+      } else {
+        res.redirect(302, `/accept-terms?next=${encodeURIComponent(req.path)}`);
+      }
+      return;
+    }
   }
-  res.redirect(302, "/login");
+  next();
 });
 
 app.use(express.static(join(here, "public")));
-
-function sessionOf(req: Request): Session | null {
-  return (req as AuthedRequest).session;
-}
 
 function tierOf(req: Request): Tier {
   return sessionOf(req) ? "member" : "anon";
@@ -247,7 +267,7 @@ function tierOf(req: Request): Tier {
 function limitsOf(req: Request): TierLimits {
   const session = sessionOf(req);
   if (!session) return LIMITS.anon;
-  return isOwner(session.email) ? LIMITS.owner : LIMITS.member;
+  return session.isOwner ? LIMITS.owner : LIMITS.member;
 }
 
 // Lets the static frontend adapt to who's looking -- the static index.html
@@ -257,7 +277,7 @@ app.get("/api/me", (req, res) => {
   const tier = tierOf(req);
   res.json({
     email: session?.email ?? null,
-    isOwner: session ? isOwner(session.email) : false,
+    isOwner: session?.isOwner ?? false,
     tier,
     publicMode: PUBLIC_MODE,
     allowedDomains: tier === "anon" ? OPEN_SOURCE_DOMAINS : null,
@@ -265,57 +285,7 @@ app.get("/api/me", (req, res) => {
   });
 });
 
-function requireOwner(req: Request, res: Response, next: NextFunction): void {
-  const session = sessionOf(req);
-  if (!session) {
-    res.redirect(302, "/login");
-    return;
-  }
-  if (!isOwner(session.email)) {
-    res.status(403).send(html("Forbidden", "<p>Owner access only.</p>"));
-    return;
-  }
-  next();
-}
-
-app.get("/admin", requireOwner, (_req, res) => {
-  const rows = listAllowedEmails()
-    .map(
-      (e) =>
-        `<tr><td>${escapeHtml(e.email)}</td><td class="muted">${escapeHtml(e.addedAt)}</td>
-         <td><form method="post" action="/api/admin/allowlist/remove" style="margin:0">
-           <input type="hidden" name="email" value="${escapeHtml(e.email)}">
-           <button type="submit">Remove</button>
-         </form></td></tr>`,
-    )
-    .join("");
-
-  res.send(
-    html(
-      "Admin",
-      `<h1>Allowlist</h1>
-       <form method="post" action="/api/admin/allowlist/add">
-         <input type="email" name="email" placeholder="someone@example.com" required>
-         <button type="submit">Add</button>
-       </form>
-       <table><tr><th>Email</th><th>Added</th><th></th></tr>${rows}</table>
-       <p class="muted"><a href="/">&larr; Back to regoose</a></p>`,
-    ),
-  );
-});
-
-app.post("/api/admin/allowlist/add", requireOwner, (req, res) => {
-  const email = typeof req.body?.email === "string" ? req.body.email.trim() : "";
-  const session = sessionOf(req)!;
-  if (email && email.length <= 254) addAllowedEmail(email, session.email);
-  res.redirect(302, "/admin");
-});
-
-app.post("/api/admin/allowlist/remove", requireOwner, (req, res) => {
-  const email = typeof req.body?.email === "string" ? req.body.email : "";
-  if (email) removeAllowedEmail(email);
-  res.redirect(302, "/admin");
-});
+registerAdminRoutes(app, { publicMode: PUBLIC_MODE });
 
 // -- Extraction ------------------------------------------------------------
 
@@ -327,7 +297,8 @@ const extractLimiters = {
 };
 const exportLimiter = createRateLimiter(60, 10 * 60_000);
 
-function rateLimited(res: Response, windowMs: number): void {
+function rateLimited(req: Request, res: Response, windowMs: number): void {
+  track(req, clientIp(req), { type: "ratelimit" });
   res.setHeader("Retry-After", String(Math.ceil(windowMs / 1000)));
   res
     .status(429)
@@ -338,11 +309,11 @@ function limitExtractions(req: Request, res: Response, next: NextFunction): void
   const session = sessionOf(req);
   const limiter = !session
     ? extractLimiters.anon
-    : isOwner(session.email)
+    : session.isOwner
       ? extractLimiters.owner
       : extractLimiters.member;
   if (!limiter(clientIp(req))) {
-    rateLimited(res, limitsOf(req).windowMs);
+    rateLimited(req, res, limitsOf(req).windowMs);
     return;
   }
   next();
@@ -350,7 +321,7 @@ function limitExtractions(req: Request, res: Response, next: NextFunction): void
 
 function limitExports(req: Request, res: Response, next: NextFunction): void {
   if (!exportLimiter(clientIp(req))) {
-    rateLimited(res, 10 * 60_000);
+    rateLimited(req, res, 10 * 60_000);
     return;
   }
   next();
@@ -364,10 +335,39 @@ interface ExtractRequestBody {
 
 const MAX_URL_LENGTH = 2048;
 
+/** A short, stable label for how an extraction ended, for the analytics breakdowns. */
+function outcomeOf(article: Article): string {
+  if (article.fetchErrorKind === "robots") return "robots";
+  if (article.fetchErrorKind === "blocked-url") {
+    return article.fetchError === DEMO_ONLY_MESSAGE ? "demo-only" : "blocked-url";
+  }
+  if (article.fetchErrorKind === "too-large") return "too-large";
+  if (article.fetchError) {
+    const status = /^HTTP (\d+)/.exec(article.fetchError)?.[1];
+    if (!status) return "network";
+    return [401, 403, 406, 429, 451].includes(Number(status)) ? "blocking" : "http-error";
+  }
+  if (article.timedOut) return "timeout";
+  return "ok";
+}
+
+function hostOf(url: string): string | undefined {
+  try {
+    return new URL(url).hostname
+      .toLowerCase()
+      .replace(/^www\./, "")
+      .slice(0, 80);
+  } catch {
+    return undefined;
+  }
+}
+
 app.post("/api/extract", limitExtractions, express.json({ limit: "4mb" }), async (req, res) => {
   const body = (req.body ?? {}) as ExtractRequestBody;
   const tier = tierOf(req);
   const limits = limitsOf(req);
+  const session = sessionOf(req);
+  const ip = clientIp(req);
   const fail = (status: number, error: string) => res.status(status).json({ ok: false, error });
 
   const url = typeof body.url === "string" ? body.url.trim() : "";
@@ -385,11 +385,13 @@ app.post("/api/extract", limitExtractions, express.json({ limit: "4mb" }), async
   // Checked in this order on purpose: "busy" must not use up anyone's daily
   // allowance, and a request that can't run mustn't count against it either.
   if (activeExtractions >= MAX_CONCURRENT_EXTRACTIONS) {
+    track(req, ip, { type: "busy" });
     res.setHeader("Retry-After", "5");
     return fail(503, "regoose is busy right now. Try again in a few seconds.");
   }
-  const capTier = isOwner(sessionOf(req)?.email ?? "") ? "owner" : tier;
+  const capTier = session?.isOwner ? "owner" : tier;
   if (!consumeDailyUsage(capTier, LIMITS[capTier].dailyCap)) {
+    track(req, ip, { type: "cap" });
     return fail(
       503,
       tier === "anon"
@@ -397,9 +399,12 @@ app.post("/api/extract", limitExtractions, express.json({ limit: "4mb" }), async
         : "The daily limit has been reached. Please try again tomorrow.",
     );
   }
+  if (session && !session.isOwner) recordMemberExtraction(session.email);
 
   const started = performance.now();
   const elapsed = () => Math.round(performance.now() - started);
+  const mode = rawHtml ? "paste" : "url";
+  const host = rawHtml ? undefined : hostOf(url);
   activeExtractions++;
   try {
     const config = buildConfiguration(tier, body.config, createUrlGuard(tier), limits);
@@ -415,6 +420,16 @@ app.post("/api/extract", limitExtractions, express.json({ limit: "4mb" }), async
     // couldn't be fetched" apart from "fetched fine, but there was nothing
     // worth extracting."
     const failure = describeFetchFailure(article);
+    track(req, ip, {
+      type: "extract",
+      mode,
+      host,
+      outcome: outcomeOf(article),
+      ms: elapsed(),
+      len: failure ? 0 : article.cleanedText.length,
+      img: config.enableImageFetching,
+    });
+
     if (failure) {
       const status =
         article.fetchErrorKind === "robots"
@@ -434,6 +449,7 @@ app.post("/api/extract", limitExtractions, express.json({ limit: "4mb" }), async
     // Log the real reason; show visitors a generic one, since an internal
     // error message can carry paths or other details they shouldn't see.
     console.error("extract failed:", error instanceof Error ? error.message : String(error));
+    track(req, ip, { type: "extract", mode, host, outcome: "error", ms: elapsed() });
     return res.status(500).json({
       ok: false,
       elapsedMs: elapsed(),
@@ -502,6 +518,7 @@ app.post("/api/export", limitExports, express.json({ limit: "4mb" }), (req, res)
       ? renderArticlesZip(items, format)
       : renderArticleExport(items[0]!.article, String(items[0]!.label ?? "article"), format);
 
+    track(req, clientIp(req), { type: "export", fmt: format, n: items.length });
     res.setHeader("Content-Type", rendered.mime);
     res.setHeader("Content-Disposition", contentDisposition(rendered.filename));
     res.send(Buffer.from(rendered.bytes));
@@ -529,9 +546,19 @@ process.on("unhandledRejection", (reason) => {
   console.error("unhandled rejection:", reason instanceof Error ? reason.message : reason);
 });
 
+// Fly stops an idle machine with SIGINT then SIGTERM; write out buffered
+// analytics before exiting rather than losing the last couple of seconds.
+for (const signal of ["SIGINT", "SIGTERM"] as const) {
+  process.on(signal, () => {
+    flushAnalytics();
+    process.exit(0);
+  });
+}
+
 app.listen(PORT, HOST, () => {
   console.log(`goose-ts web UI: http://${HOST}:${PORT}`);
   console.log(`public mode: ${PUBLIC_MODE ? "ON" : "off (sign-in required)"}`);
+  console.log(`owner: ${ownerEmail() ? "configured" : "missing"}`);
   if (HOST === "127.0.0.1") {
     console.log(
       "(local dev tool only -- not part of the published package, don't expose this port publicly)",

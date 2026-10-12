@@ -38,7 +38,11 @@ describe("consumeDailyUsage", () => {
     for (let i = 0; i < 5; i++) {
       expect(consumeDailyUsage("owner", Number.POSITIVE_INFINITY, day("2026-01-14"))).toBe(true);
     }
-    expect(readFileSync(process.env.DB_PATH!, "utf-8")).not.toContain("owner");
+    const usage = JSON.parse(readFileSync(process.env.DB_PATH!, "utf-8")).usage as Record<
+      string,
+      number
+    >;
+    expect(Object.keys(usage).some((k) => k.endsWith(":owner"))).toBe(false);
   });
 
   it("forgets counts older than a week, so the file doesn't grow forever", () => {

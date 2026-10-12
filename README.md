@@ -85,6 +85,37 @@ both usable from anything that can make an HTTP request -- not just the bundled 
 Both bind to `127.0.0.1` only by default, and both require a signed-in session unless the server
 was started with `PUBLIC_MODE=true` -- see the security note below before changing either.
 
+## Accounts, access and analytics (the hosted site)
+
+Everything in this section belongs to the hosted dashboard (`web/`), not the npm package.
+
+**Access.** There are no passwords. The owner invites someone by email from `/admin` (or approves a
+request made at `/request-access`); they get a one-time access code, enter it once at `/redeem`, and
+afterwards return with an emailed sign-in link. A signed-in device stays signed in for 30 days, renewed
+whenever it's used. Sessions are revocable: removing a member, or "sign out everywhere", ends them at
+once. Emailed links open a confirmation page and are only spent by a button press, so mail scanners
+that pre-fetch links can't use them up.
+
+**Admin (`/admin`, owner only).** Overview (analytics and a setup checklist), Members (invite by
+email, resend, sign out, remove) and Requests (approve and email a code, or decline). Everything the
+pages do is also available as JSON: `GET /api/admin/analytics?days=30`, `GET /api/admin/members`,
+`GET /api/admin/requests`, and `POST /api/admin/invite`, `/members/resend`, `/members/remove`,
+`/members/signout`, `/requests/approve`, `/requests/decline`.
+
+**Stored data.** One small file on the Fly volume, encrypted at rest (AES-256-GCM) with `DATA_KEY`,
+holding member emails and a few dates and counters, pending access requests, and hashed codes and
+links (never the codes themselves). A wrong key stops the server rather than being read as an empty
+file. Retention is enforced at startup and daily: spent codes 30 days, decided requests 90, analytics 90. Members can delete their own account at `/account`, which erases everything held about them.
+
+**Analytics** (`web/analytics.ts`) are first-party and cookieless. A visitor is a hash of IP and
+browser with a salt that is replaced daily and then discarded, so people can be counted within a day
+but never followed across days. IP addresses, full URLs, raw User-Agents and member identities are
+never recorded (only the hostname of a fetched page, only coarse device/browser/OS families, and a
+tier of "anon" or "member"); the owner's own activity and bots are excluded; Do Not Track and Global
+Privacy Control visitors appear only in anonymous totals. The Terms and Privacy Policy
+(`web/legal.ts`) describe exactly this, and `test/pages.test.ts` fails if the retention numbers in the
+text drift from the code.
+
 ## Web UI
 
 A small local dashboard for poking at extraction interactively — URL or pasted HTML, every

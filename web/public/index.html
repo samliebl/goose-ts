@@ -17,8 +17,10 @@
       </div>
       <div class="topbar-actions">
         <a class="admin-link" href="/about">about</a>
+        <a class="admin-link" href="/author">author</a>
         <a class="admin-link hidden" id="signin-link" href="/login">sign in</a>
         <a class="admin-link hidden" id="admin-link" href="/admin">admin</a>
+        <a class="admin-link hidden" id="account-link" href="/account">account</a>
         <button
           class="theme-toggle"
           id="theme-toggle"
@@ -42,7 +44,8 @@
         <p class="public-note hidden" id="public-note">
           <strong>Public demo.</strong> It fetches pages from a short list of open-source sites
           (<span id="allowed-domains"></span>), or you can paste any page's HTML. Sign in to fetch
-          any other URL.
+          any other URL. <a href="/request-access">Request access</a> &middot;
+          <a href="/about">why is the demo limited?</a>
         </p>
         <div class="examples hidden" id="examples" aria-label="Example pages"></div>
 
@@ -166,6 +169,19 @@
       </section>
     </main>
 
+    <footer class="site-footer">
+      <p>
+        regoose is a portfolio project by Sam Liebl. No ads, no trackers, and no cookies unless you
+        sign in.
+      </p>
+      <p>
+        <a href="/terms">Terms</a> <a href="/privacy">Privacy</a> <a href="/about">About</a>
+        <a href="/author">Author</a>
+        <a href="https://github.com/samliebl/goose-ts" rel="noopener">Source on GitHub</a>
+      </p>
+    </footer>
+
     <script type="module" src="app.js"></script>
+    <script src="/m.js" defer></script>
   </body>
 </html>

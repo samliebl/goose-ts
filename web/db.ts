@@ -1,143 +1,284 @@
-import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
+import {
+  chmodSync,
+  copyFileSync,
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  renameSync,
+  writeFileSync,
+} from "node:fs";
 import { dirname } from "node:path";
+import { deriveKey, isSealed, open, seal } from "./secure-file.js";
+import { isProduction } from "./secrets.js";
 
 /**
- * A plain JSON file, not a database -- matches tohode's approach in spirit
- * (see its db/tokens.js: small, embedded, no external service to run or
- * pay for), but even that was more machinery than this actually needs. The
- * data here is tiny (an allowlist, a handful of pending login tokens at
- * any moment) and single-writer (one small Node process), so a
- * read-modify-write JSON file is genuinely sufficient -- no query engine,
- * no native binary, nothing that can fail to compile for a given platform.
+ * One small file, not a database -- the data is tiny (a handful of people, a
+ * few pending codes) and single-writer (one Node process), so an in-memory
+ * copy that's written through on every change is genuinely sufficient: no
+ * query engine, no native binary, nothing that can fail to compile.
  *
- * DB_PATH should point at a Fly volume mount in production (see fly.toml's
- * [mounts] section) so this survives restarts and redeploys; it defaults
- * to a local file under web/.data/ for `npm run web`, which is gitignored.
+ * What makes that acceptable for personal data:
+ *  - Encrypted at rest (AES-256-GCM) whenever DATA_KEY is set, which
+ *    production requires. The file lives on Fly's encrypted volume too;
+ *    this protects a copy of the file taken any other way.
+ *  - Fails closed. A wrong key or a tampered file stops the server with a
+ *    clear error rather than being read as "empty" and overwritten, which
+ *    would silently erase everyone's access.
+ *  - Written atomically (temp file + rename) with 0600 permissions, keeping
+ *    the previous version as `.bak`.
+ *  - Secrets are stored as hashes (login tokens, access codes), never as
+ *    themselves.
+ *
+ * DB_PATH should point at a Fly volume mount in production (see fly.toml).
  */
 
-interface AllowedEmail {
+export interface Member {
+  id: string;
   email: string;
+  /** "invited": has a code but hasn't redeemed it yet. "active": can sign in. */
+  status: "invited" | "active";
   addedAt: string;
-  addedBy: string;
+  addedBy: "owner" | "request";
+  note: string;
+  redeemedAt: string | null;
+  termsVersion: string | null;
+  termsAcceptedAt: string | null;
+  lastSeenAt: string | null;
+  extractions: number;
+  /** Bumped to sign this person out of every device at once. */
+  epoch: number;
 }
 
-interface AuthToken {
+export interface Invite {
+  codeHash: string;
+  email: string;
+  createdAt: string;
+  expiresAt: string;
+  usedAt: string | null;
+}
+
+export interface AccessRequest {
+  id: string;
+  email: string;
+  message: string;
+  createdAt: string;
+  status: "pending" | "approved" | "declined";
+  decidedAt: string | null;
+}
+
+export interface AuthToken {
   tokenHash: string;
   email: string;
   expiresAt: string;
   usedAt: string | null;
 }
 
-interface StoreShape {
-  allowedEmails: AllowedEmail[];
+export interface StoreShape {
+  version: 2;
+  members: Member[];
+  invites: Invite[];
+  requests: AccessRequest[];
   authTokens: AuthToken[];
   /** Extractions served per "YYYY-MM-DD:tier" -- see consumeDailyUsage. */
   usage: Record<string, number>;
+  settings: {
+    ownerEpoch: number;
+    /** Today's analytics salt. Replaced daily and never kept, so yesterday's visitor hashes can't be linked back to anyone. */
+    analyticsSalt: { date: string; salt: string } | null;
+  };
 }
 
-const DB_PATH = process.env.DB_PATH ?? "web/.data/goose-ts.json";
-mkdirSync(dirname(DB_PATH), { recursive: true });
+const emptyStore = (): StoreShape => ({
+  version: 2,
+  members: [],
+  invites: [],
+  requests: [],
+  authTokens: [],
+  usage: {},
+  settings: { ownerEpoch: 0, analyticsSalt: null },
+});
+
+function dbPath(): string {
+  return process.env.DB_PATH ?? "web/.data/goose-ts.json";
+}
+
+/** The directory the data file lives in (the Fly volume in production); other persistent files go alongside it. */
+export function dataDir(): string {
+  return dirname(dbPath());
+}
+
+function dataKey(): Buffer | null {
+  const secret = process.env.DATA_KEY;
+  if (secret) return deriveKey(secret);
+  if (isProduction()) throw new Error("Missing required environment variable: DATA_KEY");
+  return null;
+}
+
+/** Accepts the original (v1) shape too -- its allowlist entries become active members. */
+function migrate(parsed: unknown): StoreShape {
+  const obj = (parsed && typeof parsed === "object" ? parsed : {}) as Record<string, unknown>;
+  const store = emptyStore();
+  if (Array.isArray(obj["members"])) store.members = obj["members"] as Member[];
+  if (Array.isArray(obj["invites"])) store.invites = obj["invites"] as Invite[];
+  if (Array.isArray(obj["requests"])) store.requests = obj["requests"] as AccessRequest[];
+  if (Array.isArray(obj["authTokens"])) store.authTokens = obj["authTokens"] as AuthToken[];
+  if (obj["usage"] && typeof obj["usage"] === "object") {
+    store.usage = obj["usage"] as Record<string, number>;
+  }
+  const settings = obj["settings"] as Partial<StoreShape["settings"]> | undefined;
+  if (settings) {
+    store.settings.ownerEpoch = settings.ownerEpoch ?? 0;
+    store.settings.analyticsSalt = settings.analyticsSalt ?? null;
+  }
+
+  if (Array.isArray(obj["allowedEmails"])) {
+    for (const old of obj["allowedEmails"] as Array<{
+      email: string;
+      addedAt: string;
+      addedBy: string;
+    }>) {
+      if (store.members.some((m) => m.email === old.email)) continue;
+      store.members.push({
+        id: crypto.randomUUID(),
+        email: old.email,
+        status: "active",
+        addedAt: old.addedAt,
+        addedBy: "owner",
+        note: "",
+        redeemedAt: old.addedAt,
+        termsVersion: null,
+        termsAcceptedAt: null,
+        lastSeenAt: null,
+        extractions: 0,
+        epoch: 0,
+      });
+    }
+  }
+  return store;
+}
+
+let cache: { path: string; data: StoreShape } | null = null;
 
 function load(): StoreShape {
-  if (!existsSync(DB_PATH)) return { allowedEmails: [], authTokens: [], usage: {} };
-  try {
-    const parsed: unknown = JSON.parse(readFileSync(DB_PATH, "utf-8"));
-    if (parsed && typeof parsed === "object") {
-      const obj = parsed as Partial<StoreShape>;
-      return {
-        allowedEmails: obj.allowedEmails ?? [],
-        authTokens: obj.authTokens ?? [],
-        usage: obj.usage ?? {},
-      };
+  const path = dbPath();
+  if (cache && cache.path === path) return cache.data;
+
+  mkdirSync(dirname(path), { recursive: true });
+  let data: StoreShape;
+  if (!existsSync(path)) {
+    data = emptyStore();
+  } else {
+    const raw = readFileSync(path);
+    let json: string;
+    if (isSealed(raw)) {
+      const key = dataKey();
+      if (!key) throw new Error("The data file is encrypted but DATA_KEY is not set.");
+      // Deliberately not caught: a wrong key must stop the server, not read as an empty store.
+      json = open(raw, key).toString("utf-8");
+    } else {
+      json = raw.toString("utf-8");
     }
-  } catch {
-    /* fall through to a fresh store -- a corrupt file shouldn't crash the server */
+    try {
+      data = migrate(JSON.parse(json));
+    } catch {
+      const aside = `${path}.corrupt-${Date.now()}`;
+      renameSync(path, aside);
+      console.error(`Data file was unreadable; moved to ${aside} and starting empty.`);
+      data = emptyStore();
+    }
   }
-  return { allowedEmails: [], authTokens: [], usage: {} };
+  cache = { path, data };
+  return data;
 }
 
 function save(data: StoreShape): void {
-  // Write-then-rename so a crash or an auto-stop mid-write can never leave a
-  // half-written file -- which load() would read as empty, silently dropping
-  // the allowlist.
-  const tmp = `${DB_PATH}.tmp`;
-  writeFileSync(tmp, JSON.stringify(data, null, 2));
-  renameSync(tmp, DB_PATH);
+  const path = dbPath();
+  const key = dataKey();
+  const bytes = Buffer.from(JSON.stringify(data));
+  const tmp = `${path}.tmp`;
+  writeFileSync(tmp, key ? seal(bytes, key) : bytes, { mode: 0o600 });
+  if (existsSync(path)) copyFileSync(path, `${path}.bak`);
+  renameSync(tmp, path);
+  try {
+    chmodSync(path, 0o600);
+  } catch {
+    /* best effort */
+  }
 }
 
-export function isEmailInAllowlist(email: string): boolean {
-  return load().allowedEmails.some((e) => e.email === email);
+/** For tests: forget the in-memory copy so the next call re-reads from disk. */
+export function resetStoreCache(): void {
+  cache = null;
 }
 
-export function getAllowedEmails(): AllowedEmail[] {
-  return load()
-    .allowedEmails.slice()
-    .sort((a, b) => b.addedAt.localeCompare(a.addedAt));
+/** Reads from the store. The callback must not mutate it. */
+export function readStore<T>(fn: (store: StoreShape) => T): T {
+  return fn(load());
 }
 
-export function addAllowedEmail(email: string, addedBy: string): void {
+/** Runs a mutation and writes the result through to disk. */
+export function updateStore<T>(fn: (store: StoreShape) => T): T {
   const store = load();
-  if (store.allowedEmails.some((e) => e.email === email)) return;
-  store.allowedEmails.push({ email, addedAt: new Date().toISOString(), addedBy });
+  const result = fn(store);
   save(store);
+  return result;
 }
 
-export function removeAllowedEmail(email: string): void {
-  const store = load();
-  store.allowedEmails = store.allowedEmails.filter((e) => e.email !== email);
-  save(store);
-}
+// --- Login tokens (the emailed sign-in links) ---
 
 export function insertAuthToken(tokenHash: string, email: string, expiresAt: string): void {
-  const store = load();
-  store.authTokens.push({ tokenHash, email, expiresAt, usedAt: null });
-  save(store);
+  updateStore((s) => {
+    s.authTokens.push({ tokenHash, email, expiresAt, usedAt: null });
+  });
 }
 
 export function findAuthToken(tokenHash: string): AuthToken | null {
-  return load().authTokens.find((t) => t.tokenHash === tokenHash) ?? null;
+  return readStore((s) => s.authTokens.find((t) => t.tokenHash === tokenHash) ?? null);
 }
 
 export function markAuthTokenUsed(tokenHash: string): void {
-  const store = load();
-  const token = store.authTokens.find((t) => t.tokenHash === tokenHash);
-  if (token) {
-    token.usedAt = new Date().toISOString();
-    save(store);
-  }
+  updateStore((s) => {
+    const token = s.authTokens.find((t) => t.tokenHash === tokenHash);
+    if (token) token.usedAt = new Date().toISOString();
+  });
 }
 
 /** Drops tokens that expired more than a day ago. Returns how many were removed. */
 export function purgeExpiredAuthTokens(): number {
-  const store = load();
-  const cutoff = Date.now() - 24 * 3600_000;
-  const before = store.authTokens.length;
-  store.authTokens = store.authTokens.filter((t) => new Date(t.expiresAt).getTime() >= cutoff);
-  if (store.authTokens.length !== before) save(store);
-  return before - store.authTokens.length;
+  return updateStore((s) => {
+    const cutoff = Date.now() - 24 * 3600_000;
+    const before = s.authTokens.length;
+    s.authTokens = s.authTokens.filter((t) => new Date(t.expiresAt).getTime() >= cutoff);
+    return before - s.authTokens.length;
+  });
 }
+
+// --- Daily caps ---
 
 /**
  * Counts one extraction against today's cap for a tier, unless the cap is
- * already reached. Returns whether it was allowed. Kept in the same file as
- * everything else (on the persistent volume) rather than in memory, so a
- * machine restart -- which Fly's auto-stop does constantly -- can't be used
- * to reset the cost ceiling.
+ * already reached. Returns whether it was allowed. Kept on the persistent
+ * volume rather than in memory, so a machine restart -- which Fly's
+ * auto-stop does constantly -- can't be used to reset the cost ceiling.
  */
 export function consumeDailyUsage(tier: string, cap: number, now = new Date()): boolean {
   if (cap === Number.POSITIVE_INFINITY) return true;
-  const store = load();
-  const today = now.toISOString().slice(0, 10);
-  const key = `${today}:${tier}`;
+  return updateStore((store) => {
+    const today = now.toISOString().slice(0, 10);
+    const key = `${today}:${tier}`;
 
-  const cutoff = new Date(now.getTime() - 7 * 24 * 3600_000).toISOString().slice(0, 10);
-  for (const k of Object.keys(store.usage)) {
-    if (k.slice(0, 10) < cutoff) delete store.usage[k];
-  }
+    const cutoff = new Date(now.getTime() - 7 * 24 * 3600_000).toISOString().slice(0, 10);
+    for (const k of Object.keys(store.usage)) {
+      if (k.slice(0, 10) < cutoff) delete store.usage[k];
+    }
 
-  const used = store.usage[key] ?? 0;
-  if (used >= cap) return false;
-  store.usage[key] = used + 1;
-  save(store);
-  return true;
+    const used = store.usage[key] ?? 0;
+    if (used >= cap) return false;
+    store.usage[key] = used + 1;
+    return true;
+  });
+}
+
+export function readDailyUsage(tier: string, now = new Date()): number {
+  return readStore((s) => s.usage[`${now.toISOString().slice(0, 10)}:${tier}`] ?? 0);
 }

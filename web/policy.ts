@@ -108,7 +108,7 @@ export const LIMITS: Record<Tier | "owner", TierLimits> = {
   },
 };
 
-const DEMO_ONLY_MESSAGE =
+export const DEMO_ONLY_MESSAGE =
   "The public demo only fetches from a short list of open-source sites. Paste the page's HTML instead, or sign in to fetch any URL.";
 
 /**

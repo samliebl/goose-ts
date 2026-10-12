@@ -12,7 +12,9 @@ primary_region = "iad"
   # public demo (pasted HTML, plus URLs from the open-source allowlist in
   # web/policy.ts); signed-in members keep the full tool. Deliberately off.
   # PUBLIC_MODE = "true"
-  # Optional: ABUSE_EMAIL shown on /about (default: a GitHub issues link), and
+  # Required secrets (fly secrets set ...): SESSION_SECRET, RESEND_API_KEY, OWNER_EMAIL, and
+  # DATA_KEY (encrypts the data file; the server won't start without it).
+  # Optional: PRIVACY_EMAIL (shown on /about, /terms, /privacy), ABUSE_EMAIL shown on /about (default: a GitHub issues link), and
   # BLOCKED_DOMAINS="site1.com,site2.org" to refuse sites that ask us to stay away.
 
 [http_service]

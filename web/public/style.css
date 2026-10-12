@@ -762,11 +762,59 @@ dl dd {
    its subtitle -- nothing here changes structure (that already happened at
    900px above), just density. */
 @media (max-width: 640px) {
+  /* The links can't all fit beside the brand at this width, so they drop to
+     their own row (and wrap again if they must) rather than running off the
+     edge of the screen. Touch targets grow to 44px, the usual minimum. */
   .topbar {
-    padding: 12px 16px;
+    flex-wrap: wrap;
+    align-items: center;
+    row-gap: 4px;
+    padding: 8px 16px;
+  }
+  .topbar-actions {
+    flex-wrap: wrap;
+    gap: 6px 8px;
+    width: 100%;
+  }
+  .admin-link,
+  .repo-link {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    padding: 0 14px;
+  }
+  .theme-toggle {
+    width: 44px;
+    height: 44px;
   }
   .brand-tag {
     display: none;
+  }
+  .tab,
+  .extract-btn,
+  .download-btn,
+  select,
+  input[type="number"],
+  input[type="text"],
+  input[type="url"] {
+    min-height: 44px;
+  }
+  .field.checkbox {
+    min-height: 44px;
+    align-items: center;
+  }
+  .field.checkbox input {
+    width: 22px;
+    height: 22px;
+  }
+  /* iOS Safari zooms the whole page when a text field under 16px gets
+     focus, and doesn't zoom back out. */
+  textarea,
+  input,
+  select,
+  .config-grid input,
+  .config-grid select {
+    font-size: 16px;
   }
   .panel {
     padding: 16px;
@@ -828,4 +876,22 @@ dl dd {
 
 .example-btn:hover {
   border-color: var(--accent);
+}
+
+.site-footer {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 20px 24px 32px;
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
+.site-footer p {
+  margin: 0 0 6px;
+}
+
+.site-footer a {
+  display: inline-block;
+  padding: 12px 8px;
+  color: var(--text-muted);
 }

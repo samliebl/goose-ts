@@ -46,6 +46,7 @@ fetch("/api/me")
     if (!me) return;
     const anon = me.tier === "anon";
     if (me.isOwner) $("admin-link").classList.remove("hidden");
+    if (!anon) $("account-link").classList.remove("hidden");
     $("signin-link").classList.toggle("hidden", !anon);
     $("public-note").classList.toggle("hidden", !anon);
     if (anon) $("allowed-domains").textContent = (me.allowedDomains ?? []).join(", ");
