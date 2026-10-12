@@ -65,6 +65,13 @@ export class Article {
    */
   fetchError: string | null = null;
   /**
+   * goose-ts addition: when fetchError was a deliberate refusal on our side
+   * rather than a network problem or an HTTP status -- robots.txt said no,
+   * the URL guard blocked the address, or the page exceeded the size cap --
+   * which one, so callers can explain it accurately instead of guessing.
+   */
+  fetchErrorKind: "robots" | "blocked-url" | "too-large" | null = null;
+  /**
    * goose-ts addition, not in python-goose: set when the page fetched fine
    * but the overall extraction ran out of its time budget before finishing
    * -- in practice, always during image scoring (see ImagesExtractor),

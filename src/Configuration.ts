@@ -33,6 +33,29 @@ export interface ConfigurationOptions {
    */
   overallTimeoutMs?: number;
   /**
+   * goose-ts addition: called before every outbound request -- the page,
+   * each redirect hop, every image, robots.txt -- and may throw to refuse
+   * it (throw a BlockedUrlError for a message that's safe to show users).
+   * A server that fetches URLs on behalf of strangers uses this to block
+   * private/internal addresses; without it, a redirect or an <img> tag in
+   * a hostile page could point the fetcher anywhere.
+   */
+  urlGuard?: (url: string) => Promise<void> | void;
+  /** Redirects followed per request, each re-checked by urlGuard. Default 5. */
+  maxRedirects?: number;
+  /** Largest page body accepted, in bytes. Default 5000000. */
+  maxResponseBytes?: number;
+  /** Largest single image accepted, in bytes. Default 10000000. */
+  maxImageBytes?: number;
+  /**
+   * Check the site's robots.txt before fetching a page, and refuse if it
+   * disallows our User-Agent (an unreachable robots.txt counts as
+   * disallowing, per RFC 9309). Default false for library use -- a person
+   * running their own script on their own machine -- but any service
+   * fetching on behalf of others should turn this on.
+   */
+  respectRobotsTxt?: boolean;
+  /**
    * goose-ts addition, not in python-goose: when DOM-based scoring finds
    * little or nothing (see MIN_SUBSTANTIAL_TEXT_LENGTH in Crawler.ts) --
    * most commonly on client-side-rendered pages, whose initial HTML has no
@@ -51,6 +74,11 @@ export class Configuration {
   browserUserAgent: string;
   httpTimeout: number;
   enableJsonLdFallback: boolean;
+  urlGuard: ((url: string) => Promise<void> | void) | undefined;
+  maxRedirects: number;
+  maxResponseBytes: number;
+  maxImageBytes: number;
+  respectRobotsTxt: boolean;
   /** Timestamp (ms since epoch) this extraction's overall budget runs out. Computed once, here, so every fetch site shares the same clock regardless of when it happens to run. */
   readonly deadlineAt: number;
 
@@ -62,6 +90,11 @@ export class Configuration {
     this.browserUserAgent = options.browserUserAgent ?? `goose-ts/${VERSION}`;
     this.httpTimeout = options.httpTimeout ?? 12_000;
     this.enableJsonLdFallback = options.enableJsonLdFallback ?? true;
+    this.urlGuard = options.urlGuard;
+    this.maxRedirects = options.maxRedirects ?? 5;
+    this.maxResponseBytes = options.maxResponseBytes ?? 5_000_000;
+    this.maxImageBytes = options.maxImageBytes ?? 10_000_000;
+    this.respectRobotsTxt = options.respectRobotsTxt ?? false;
     this.deadlineAt = Date.now() + (options.overallTimeoutMs ?? 20_000);
   }
 

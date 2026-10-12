@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import { dirname } from "node:path";
 
 /**
@@ -31,27 +31,38 @@ interface AuthToken {
 interface StoreShape {
   allowedEmails: AllowedEmail[];
   authTokens: AuthToken[];
+  /** Extractions served per "YYYY-MM-DD:tier" -- see consumeDailyUsage. */
+  usage: Record<string, number>;
 }
 
 const DB_PATH = process.env.DB_PATH ?? "web/.data/goose-ts.json";
 mkdirSync(dirname(DB_PATH), { recursive: true });
 
 function load(): StoreShape {
-  if (!existsSync(DB_PATH)) return { allowedEmails: [], authTokens: [] };
+  if (!existsSync(DB_PATH)) return { allowedEmails: [], authTokens: [], usage: {} };
   try {
     const parsed: unknown = JSON.parse(readFileSync(DB_PATH, "utf-8"));
     if (parsed && typeof parsed === "object") {
       const obj = parsed as Partial<StoreShape>;
-      return { allowedEmails: obj.allowedEmails ?? [], authTokens: obj.authTokens ?? [] };
+      return {
+        allowedEmails: obj.allowedEmails ?? [],
+        authTokens: obj.authTokens ?? [],
+        usage: obj.usage ?? {},
+      };
     }
   } catch {
     /* fall through to a fresh store -- a corrupt file shouldn't crash the server */
   }
-  return { allowedEmails: [], authTokens: [] };
+  return { allowedEmails: [], authTokens: [], usage: {} };
 }
 
 function save(data: StoreShape): void {
-  writeFileSync(DB_PATH, JSON.stringify(data, null, 2));
+  // Write-then-rename so a crash or an auto-stop mid-write can never leave a
+  // half-written file -- which load() would read as empty, silently dropping
+  // the allowlist.
+  const tmp = `${DB_PATH}.tmp`;
+  writeFileSync(tmp, JSON.stringify(data, null, 2));
+  renameSync(tmp, DB_PATH);
 }
 
 export function isEmailInAllowlist(email: string): boolean {
@@ -104,4 +115,29 @@ export function purgeExpiredAuthTokens(): number {
   store.authTokens = store.authTokens.filter((t) => new Date(t.expiresAt).getTime() >= cutoff);
   if (store.authTokens.length !== before) save(store);
   return before - store.authTokens.length;
+}
+
+/**
+ * Counts one extraction against today's cap for a tier, unless the cap is
+ * already reached. Returns whether it was allowed. Kept in the same file as
+ * everything else (on the persistent volume) rather than in memory, so a
+ * machine restart -- which Fly's auto-stop does constantly -- can't be used
+ * to reset the cost ceiling.
+ */
+export function consumeDailyUsage(tier: string, cap: number, now = new Date()): boolean {
+  if (cap === Number.POSITIVE_INFINITY) return true;
+  const store = load();
+  const today = now.toISOString().slice(0, 10);
+  const key = `${today}:${tier}`;
+
+  const cutoff = new Date(now.getTime() - 7 * 24 * 3600_000).toISOString().slice(0, 10);
+  for (const k of Object.keys(store.usage)) {
+    if (k.slice(0, 10) < cutoff) delete store.usage[k];
+  }
+
+  const used = store.usage[key] ?? 0;
+  if (used >= cap) return false;
+  store.usage[key] = used + 1;
+  save(store);
+  return true;
 }

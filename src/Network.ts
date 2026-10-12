@@ -1,6 +1,7 @@
 import chardet from "chardet";
 import iconv from "iconv-lite";
 import type { Configuration } from "./Configuration.js";
+import { guardedFetch } from "./safeFetch.js";
 
 function detectCharset(contentType: string | null, buffer: Buffer): string {
   const headerMatch = contentType?.match(/charset=([\w-]+)/i);
@@ -27,19 +28,22 @@ export class HtmlFetcher {
       headers: { "User-Agent": this.config.browserUserAgent },
     });
 
+    let buffer: Buffer;
     try {
-      this.response = await fetch(this.request, {
-        signal: AbortSignal.timeout(Math.min(this.config.httpTimeout, this.config.remainingMs())),
+      const { response, bytes } = await guardedFetch(url, this.config, {
+        headers: { "User-Agent": this.config.browserUserAgent },
+        maxBytes: this.config.maxResponseBytes,
+        checkRobots: this.config.respectRobotsTxt,
       });
+      this.response = response;
+      if (!response.ok) return null;
+      buffer = bytes;
     } catch (err) {
       this.response = null;
       this.error = err;
       return null;
     }
 
-    if (!this.response.ok) return null;
-
-    const buffer = Buffer.from(await this.response.arrayBuffer());
     const charset = detectCharset(this.response.headers.get("content-type"), buffer);
     try {
       return iconv.decode(buffer, charset);

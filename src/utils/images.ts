@@ -1,6 +1,7 @@
 import sharp from "sharp";
 import type { Configuration } from "../Configuration.js";
 import { LocallyStoredImage } from "../Image.js";
+import { guardedFetch } from "../safeFetch.js";
 
 const MIME_EXTENSIONS: Record<string, string> = {
   png: ".png",
@@ -26,17 +27,16 @@ export class ImageUtils {
     // Image scoring fetches candidates one at a time (see ImagesExtractor) --
     // once the overall extraction budget is spent, stop starting new
     // requests rather than let a slow/image-heavy page run indefinitely.
-    const remaining = config.remainingMs();
-    if (remaining <= 0) return null;
+    if (config.remainingMs() <= 0) return null;
 
     let buffer: Buffer;
     try {
-      const res = await fetch(src, {
+      const { response, bytes } = await guardedFetch(src, config, {
         headers: { "User-Agent": config.browserUserAgent },
-        signal: AbortSignal.timeout(Math.min(config.httpTimeout, remaining)),
+        maxBytes: config.maxImageBytes,
       });
-      if (!res.ok) return null;
-      buffer = Buffer.from(await res.arrayBuffer());
+      if (!response.ok) return null;
+      buffer = bytes;
     } catch {
       return null;
     }

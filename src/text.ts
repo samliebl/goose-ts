@@ -86,6 +86,9 @@ function loadStopWords(language: string): Set<string> {
 
   let words: string[] = [];
   try {
+    // The language ends up in a file path, and callers (a web server, say)
+    // may pass it straight from a request -- only ever a bare ISO code.
+    if (!/^[a-z]{2,3}$/.test(language)) throw new Error("not a language code");
     const content = loadResourceFile(`text/stopwords-${language}.txt`);
     words = content.split(/\r?\n/).filter(Boolean);
   } catch {

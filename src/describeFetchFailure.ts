@@ -13,6 +13,16 @@ import type { Article } from "./Article.js";
  * timedOut).
  */
 export function describeFetchFailure(article: Article): string | null {
+  if (article.fetchErrorKind === "robots") {
+    return `Extraction declined. ${article.fetchError} regoose only fetches pages a site's robots.txt allows.`;
+  }
+  if (article.fetchErrorKind === "blocked-url") {
+    return `Extraction refused. ${article.fetchError}`;
+  }
+  if (article.fetchErrorKind === "too-large") {
+    return "Extraction refused. That page is larger than the size limit this tool will download.";
+  }
+
   if (article.fetchError) {
     // fetchError always starts with "HTTP " when we got a real response
     // back (see Crawler.getHtml) -- a status in that response is the only

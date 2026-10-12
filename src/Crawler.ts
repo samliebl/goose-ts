@@ -17,6 +17,8 @@ import { TweetsExtractor } from "./extractors/TweetsExtractor.js";
 import { VideosExtractor } from "./extractors/VideosExtractor.js";
 import { Image } from "./Image.js";
 import { HtmlFetcher } from "./Network.js";
+import { RobotsDisallowedError } from "./robots.js";
+import { BlockedUrlError, ResponseTooLargeError } from "./safeFetch.js";
 import { OutputFormatter } from "./OutputFormatter.js";
 import { ImageUtils } from "./utils/images.js";
 import { rawParsingCandidate, urlParsingCandidate, type ParsingCandidate } from "./utils/url.js";
@@ -160,10 +162,18 @@ export class Crawler {
       article.fetchError = fetcher.response
         ? `HTTP ${fetcher.response.status} ${fetcher.response.statusText}`.trim()
         : describeNetworkError(fetcher.error);
+      article.fetchErrorKind = fetchErrorKind(fetcher.error);
     }
 
     return html;
   }
+}
+
+function fetchErrorKind(error: unknown): Article["fetchErrorKind"] {
+  if (error instanceof RobotsDisallowedError) return "robots";
+  if (error instanceof BlockedUrlError) return "blocked-url";
+  if (error instanceof ResponseTooLargeError) return "too-large";
+  return null;
 }
 
 function describeNetworkError(error: unknown): string {

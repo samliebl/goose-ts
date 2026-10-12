@@ -36,15 +36,44 @@ prefersDark.addEventListener("change", () => {
 
 syncThemeIcon();
 
-// Only the owner account can do anything at /admin (see requireOwner in
-// server.ts) -- everyone else would just get a 403 in there, so the link
-// stays hidden unless /api/me confirms it's worth showing.
+// Shapes the page to who's looking (see /api/me in server.ts): the admin
+// link only for the owner, who alone can use /admin (anyone else would just
+// get a 403); a public-demo notice and sign-in link for visitors without a
+// session; and the one-click examples for everyone.
 fetch("/api/me")
   .then((r) => (r.ok ? r.json() : null))
   .then((me) => {
-    if (me?.isOwner) $("admin-link").classList.remove("hidden");
+    if (!me) return;
+    const anon = me.tier === "anon";
+    if (me.isOwner) $("admin-link").classList.remove("hidden");
+    $("signin-link").classList.toggle("hidden", !anon);
+    $("public-note").classList.toggle("hidden", !anon);
+    if (anon) $("allowed-domains").textContent = (me.allowedDomains ?? []).join(", ");
+    for (const el of document.querySelectorAll("[data-member-only]")) {
+      el.classList.toggle("hidden", anon);
+    }
+    renderExamples(me.examples ?? []);
   })
   .catch(() => {});
+
+function renderExamples(examples) {
+  const row = $("examples");
+  if (examples.length === 0) return;
+  row.append("Try an example:");
+  for (const example of examples) {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "example-btn";
+    button.textContent = example.label;
+    button.addEventListener("click", () => {
+      document.querySelector('.tab[data-tab="url"]').click();
+      urlInput.value = example.url;
+      extract();
+    });
+    row.append(button);
+  }
+  row.classList.remove("hidden");
+}
 
 const urlInput = $("url-input");
 const htmlInput = $("html-input");
@@ -112,9 +141,6 @@ function readConfig() {
     useMetaLanguage: $("cfg-use-meta-language").checked,
     targetLanguage: $("cfg-target-language").value,
     httpTimeout: Number($("cfg-http-timeout").value) || 12000,
-    ...($("cfg-user-agent").value.trim()
-      ? { browserUserAgent: $("cfg-user-agent").value.trim() }
-      : {}),
   };
 }
 

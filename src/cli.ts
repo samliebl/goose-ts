@@ -28,6 +28,7 @@ Usage:
   --no-meta-language    Don't prefer the page's own declared language over --language
   --timeout <ms>        HTTP timeout per request; default 12000
   --overall-timeout <ms> Total budget for one extraction (mainly bounds image scoring); default 20000
+  --respect-robots      Refuse pages the site's robots.txt disallows for our User-Agent
   --user-agent <ua>     User-Agent sent with outbound requests
   --help                Show this help
 
@@ -90,6 +91,7 @@ async function main(): Promise<void> {
       "no-meta-language": { type: "boolean", default: false },
       timeout: { type: "string" },
       "overall-timeout": { type: "string" },
+      "respect-robots": { type: "boolean", default: false },
       "user-agent": { type: "string" },
       help: { type: "boolean", short: "h", default: false },
     },
@@ -116,6 +118,7 @@ async function main(): Promise<void> {
     useMetaLanguage: !values["no-meta-language"],
     ...(values.timeout ? { httpTimeout: Number(values.timeout) } : {}),
     ...(values["overall-timeout"] ? { overallTimeoutMs: Number(values["overall-timeout"]) } : {}),
+    ...(values["respect-robots"] ? { respectRobotsTxt: true } : {}),
     ...(values["user-agent"] ? { browserUserAgent: values["user-agent"] } : {}),
   };
   const goose = new Goose(config);

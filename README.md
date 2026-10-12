@@ -60,8 +60,9 @@ Flags:
 - `--zip` -- bundle results into one `.zip` of individual files, even for a single URL.
 - `--output <path>` -- write to this file instead of stdout.
 - `--language <lang>`, `--no-images`, `--no-meta-language`, `--timeout <ms>`,
-  `--overall-timeout <ms>`, `--user-agent <ua>` -- the same options the web dashboard's
-  Configuration panel exposes.
+  `--overall-timeout <ms>`, `--user-agent <ua>`, `--respect-robots` -- the same options the web
+  dashboard's Configuration panel exposes (the hosted dashboard fixes the User-Agent and always
+  honors robots.txt).
 - `--help`
 
 ## HTTP API
@@ -70,8 +71,10 @@ The local web dashboard (see below) is really a small Express server with two JS
 both usable from anything that can make an HTTP request -- not just the bundled frontend.
 
 - **`POST /api/extract`** -- `{ url? , rawHtml?, config? }` (at least one of `url`/`rawHtml`) ->
-  `{ ok, elapsedMs, article }` (or `{ ok: false, error }`, HTTP 502, if the fetch itself failed).
-  `article` is the same shape as `Goose#extract()`'s `article.infos`.
+  `{ ok, elapsedMs, article }`, or `{ ok: false, error }` with a status that says why: 400 (URL
+  refused), 403 (the site's robots.txt disallows it), 413 (too large), 429 (rate limited), 502
+  (the fetch failed or the site refused us), 503 (busy, or a daily limit reached), 504 (took too
+  long). `article` is the same shape as `Goose#extract()`'s `article.infos`.
 - **`POST /api/export`** -- pure formatting, no fetching: `{ article, label, format? }` for one
   file, or `{ articles: [{ article, label }, ...], format?, zip? }` for several (always zipped
   once there's more than one; `zip: true` forces it even for one). Responds with the actual file
@@ -79,7 +82,8 @@ both usable from anything that can make an HTTP request -- not just the bundled 
   and an RFC 5987 `filename*` for the exact one -- not JSON. Compose the two calls (extract, then
   export whatever came back) rather than fetching the same page twice.
 
-Both bind to `127.0.0.1` only by default -- see the security note below before changing that.
+Both bind to `127.0.0.1` only by default, and both require a signed-in session unless the server
+was started with `PUBLIC_MODE=true` -- see the security note below before changing either.
 
 ## Web UI
 
@@ -123,13 +127,21 @@ npm install
 npm run web   # -> http://127.0.0.1:4173
 ```
 
-This is a dev tool only (not published with the npm package): a small Express server in
-`web/server.ts` runs `Goose#extract()` server-side (needed since `sharp` and outbound `fetch`
-can't run in a browser) and serves a plain HTML/CSS/JS frontend from `web/public/`. It binds to
-`127.0.0.1` only — don't expose this port on a shared or public network, since it's an
-unauthenticated "fetch and parse whatever URL you give it" endpoint. Extracted content (tweet
-embed HTML, video embed codes) is rendered as escaped text rather than live HTML, since it
-originates from arbitrary, untrusted pages.
+This is not published with the npm package: a small Express server in `web/server.ts` runs
+`Goose#extract()` server-side (needed since `sharp` and outbound `fetch` can't run in a browser)
+and serves a plain HTML/CSS/JS frontend from `web/public/`. Extracted content (tweet embed HTML,
+video embed codes) is rendered as escaped text rather than live HTML, since it originates from
+arbitrary, untrusted pages.
+
+It's a "fetch and parse whatever URL you give it" endpoint, so it's built to be careful about who
+can use it and what it will touch. Locally it binds to `127.0.0.1` only. The hosted version
+(regoose.com) requires an email sign-in, and can optionally run a public demo (`PUBLIC_MODE=true`)
+that only fetches from a short allowlist of openly licensed sites (see `web/policy.ts`) or takes
+pasted HTML. Whichever way it runs: the User-Agent identifies it, robots.txt is honored, private
+and internal addresses are refused on every redirect hop and image, downloads are size-capped,
+visitors can't set their own limits, and requests are rate limited per IP with a daily total
+that bounds cost. `/about` explains this to the sites it fetches from, and `BLOCKED_DOMAINS`
+lets the operator refuse any site that asks.
 
 Light/dark theme follows your OS preference by default; the toggle in the top bar overrides and
 persists that choice. Typography is self-hosted (no CDN, works offline) under
@@ -170,8 +182,24 @@ const goose = new Goose({
   overallTimeoutMs: 20_000, // ms, wall-clock budget for the whole extract() call (default 20000)
   browserUserAgent: "goose-ts/0.2.0",
   enableJsonLdFallback: true, // see "Client-side-rendered pages" below (default true)
+  respectRobotsTxt: false, // refuse pages the site's robots.txt disallows for our User-Agent (default false)
+  maxResponseBytes: 5_000_000, // largest page accepted (default 5 MB)
+  maxImageBytes: 10_000_000, // largest single image accepted (default 10 MB)
+  maxRedirects: 5, // redirects followed per request (default 5)
+  urlGuard: async (url) => {
+    // Called before EVERY outbound request -- the page, each redirect hop,
+    // every image, robots.txt. Throw (a BlockedUrlError, for a message safe
+    // to show users) to refuse it.
+  },
 });
 ```
+
+If you're fetching on behalf of other people -- a web service, say -- turn on `respectRobotsTxt`,
+set an identifying `browserUserAgent`, and install a `urlGuard` that refuses private and internal
+addresses. A bare `fetch` follows redirects anywhere and images found inside a page are fetched
+too; the guard is what stops a hostile page from steering the fetcher at your own network. Every
+request goes through one function (`src/safeFetch.ts`), so the guard, the redirect cap, and the
+size caps apply uniformly.
 
 ## Client-side-rendered pages
 

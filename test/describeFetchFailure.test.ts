@@ -68,4 +68,33 @@ describe("describeFetchFailure", () => {
 
     expect(describeFetchFailure(article)).toContain("blocking automated tools");
   });
+
+  it("explains a robots.txt refusal as respect for the site, never as blocking", () => {
+    const article = new Article();
+    article.fetchError =
+      "en.example.org's robots.txt does not allow automated tools to fetch this page.";
+    article.fetchErrorKind = "robots";
+
+    const message = describeFetchFailure(article);
+
+    expect(message).toContain("robots.txt");
+    expect(message).toContain("only fetches pages a site's robots.txt allows");
+    expect(message).not.toContain("blocking automated tools");
+  });
+
+  it("passes a URL-guard refusal's message through", () => {
+    const article = new Article();
+    article.fetchError = "That address isn't allowed.";
+    article.fetchErrorKind = "blocked-url";
+
+    expect(describeFetchFailure(article)).toContain("That address isn't allowed.");
+  });
+
+  it("explains an oversize page as a size limit", () => {
+    const article = new Article();
+    article.fetchError = "Response is larger than the 5000000-byte limit.";
+    article.fetchErrorKind = "too-large";
+
+    expect(describeFetchFailure(article)).toContain("size limit");
+  });
 });

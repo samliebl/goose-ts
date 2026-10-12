@@ -8,6 +8,12 @@ primary_region = "iad"
   NODE_ENV = "production"
   DB_PATH = "/data/goose-ts.json"
   RESEND_FROM = "regoose <send@send.regoose.com>"
+  # Sign-in is required for everything until this is set. Setting it opens the
+  # public demo (pasted HTML, plus URLs from the open-source allowlist in
+  # web/policy.ts); signed-in members keep the full tool. Deliberately off.
+  # PUBLIC_MODE = "true"
+  # Optional: ABUSE_EMAIL shown on /about (default: a GitHub issues link), and
+  # BLOCKED_DOMAINS="site1.com,site2.org" to refuse sites that ask us to stay away.
 
 [http_service]
   internal_port = 4173
@@ -15,6 +21,13 @@ primary_region = "iad"
   auto_stop_machines = true
   auto_start_machines = true
   min_machines_running = 0
+
+  # Bound connections to the one small machine; past this, Fly queues or refuses
+  # rather than letting a burst pile onto it.
+  [http_service.concurrency]
+    type = "requests"
+    soft_limit = 20
+    hard_limit = 30
 
 [mounts]
   source = "regoose_data"

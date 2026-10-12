@@ -6,17 +6,7 @@
     <title>regoose</title>
     <link rel="stylesheet" href="fonts.css" />
     <link rel="stylesheet" href="style.css" />
-    <script>
-      // Applied synchronously, before first paint, to avoid a flash of the
-      // wrong theme. Kept inline+tiny rather than in app.js (a module
-      // script, which loads too late for this).
-      (function () {
-        var stored = localStorage.getItem("goose-ts-theme");
-        if (stored === "light" || stored === "dark") {
-          document.documentElement.setAttribute("data-theme", stored);
-        }
-      })();
-    </script>
+    <script src="theme-init.js"></script>
   </head>
   <body>
     <header class="topbar">
@@ -26,6 +16,8 @@
         <span class="brand-tag">A healthier reading experience.</span>
       </div>
       <div class="topbar-actions">
+        <a class="admin-link" href="/about">about</a>
+        <a class="admin-link hidden" id="signin-link" href="/login">sign in</a>
         <a class="admin-link hidden" id="admin-link" href="/admin">admin</a>
         <button
           class="theme-toggle"
@@ -47,6 +39,13 @@
 
     <main class="layout">
       <section class="panel input-panel">
+        <p class="public-note hidden" id="public-note">
+          <strong>Public demo.</strong> It fetches pages from a short list of open-source sites
+          (<span id="allowed-domains"></span>), or you can paste any page's HTML. Sign in to fetch
+          any other URL.
+        </p>
+        <div class="examples hidden" id="examples" aria-label="Example pages"></div>
+
         <div class="tabs" role="tablist">
           <button class="tab active" data-tab="url" role="tab" aria-selected="true">URL</button>
           <button class="tab" data-tab="html" role="tab" aria-selected="false">Paste HTML</button>
@@ -84,7 +83,7 @@
         <details class="config">
           <summary>Configuration</summary>
           <div class="config-grid">
-            <label class="field checkbox">
+            <label class="field checkbox" data-member-only>
               <input type="checkbox" id="cfg-enable-images" checked />
               <span>Fetch &amp; score images</span>
             </label>
@@ -121,10 +120,6 @@
             <label class="field">
               <span class="field-label">HTTP timeout (ms)</span>
               <input type="number" id="cfg-http-timeout" value="12000" min="1000" step="1000" />
-            </label>
-            <label class="field full">
-              <span class="field-label">User-Agent</span>
-              <input type="text" id="cfg-user-agent" placeholder="regoose/0.1.0" />
             </label>
           </div>
         </details>

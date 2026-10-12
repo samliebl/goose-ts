@@ -41,7 +41,7 @@
     "web": "tsx --env-file-if-exists=.env web/server.ts",
     "test": "vitest run",
     "test:watch": "vitest",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc --noEmit && tsc -p tsconfig.web.json",
     "lint": "eslint src test web",
     "format": "prettier --write .",
     "prepublishOnly": "npm run build && npm test"
