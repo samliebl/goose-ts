@@ -15,7 +15,8 @@ export function aboutBody(): string {
   const member = LIMITS.member;
   const domains = OPEN_SOURCE_DOMAINS.map((d) => `<code>${escapeHtml(d)}</code>`).join(", ");
 
-  return `<h1>About regoose</h1>
+  return `<img class="hero" src="/brand/mascot.png" alt="" width="230" height="208">
+<h1>About regoose</h1>
 <p>regoose turns a web page into clean, readable text: the article, without the clutter. It’s a portfolio project built on <a href="${GITHUB_REPO_URL}" rel="noopener">goose-ts</a>, an open-source TypeScript port of python-goose, and the whole thing &mdash; library, command line tool and this site &mdash; is <a href="${GITHUB_REPO_URL}" rel="noopener">open source</a>.</p>
 <p><a class="btn" href="/">Open the tool</a> &nbsp; <a href="/request-access">Request full access</a> &middot; <a href="/redeem">I have an access code</a></p>
 

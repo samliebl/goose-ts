@@ -1,15 +1,22 @@
+/* Brand palette. Contrast-checked pairs: ink on cream, UI blue with white
+   text (5.8:1), ink on the sky-blue header band (5.3:1). Orange, red and
+   brown are for illustration only, never text. */
 :root {
   color-scheme: light;
-  --bg: #ffffff;
-  --bg-panel: #f6f8fa;
-  --bg-raised: #ffffff;
-  --border: #d0d7de;
-  --text: #1f2328;
-  --text-muted: #59636e;
-  --accent: #0969da;
-  --accent-soft: rgba(9, 105, 218, 0.1);
-  --good: #1a7f37;
-  --bad: #cf222e;
+  --bg: #fcf6e6;
+  --bg-panel: #ffffff;
+  --bg-raised: #fcf6e6;
+  --border: #d8d2c0;
+  --text: #141b2d;
+  --text-muted: #4a5470;
+  --accent: #0a66b8;
+  --accent-soft: rgba(10, 102, 184, 0.1);
+  --btn: #0a66b8;
+  --btn-text: #ffffff;
+  --head: #1594e9;
+  --head-text: #141b2d;
+  --good: #1a6b36;
+  --bad: #b3261e;
 
   /* Inter (self-hosted, fonts.css), falling back to Apple's system font
      (San Francisco) if it somehow fails to load, then other platforms'. */
@@ -19,38 +26,42 @@
      it costs nothing and picks it up for free if it's already on your Mac);
      then Menlo, then whatever the platform has. */
   --font-mono: "Iosevka Extended", "SF Mono", Menlo, ui-monospace, monospace;
-  /* Junicode (self-hosted, OFL), falling back to Garamond if unavailable. */
-  --font-serif: "Junicode", Garamond, "Apple Garamond", "Times New Roman", serif;
+  /* Source Serif 4 (self-hosted, OFL) for article text. */
+  --font-serif: "Source Serif 4", Georgia, "Times New Roman", serif;
 }
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     color-scheme: dark;
-    --bg: #0d1117;
-    --bg-panel: #11161d;
-    --bg-raised: #161c25;
-    --border: #232b36;
-    --text: #e6edf3;
-    --text-muted: #8b949e;
-    --accent: #58a6ff;
-    --accent-soft: rgba(88, 166, 255, 0.12);
-    --good: #3fb950;
-    --bad: #f85149;
+    --bg: #141b2d;
+    --bg-panel: #1b2540;
+    --bg-raised: #222e50;
+    --border: #2b3556;
+    --text: #fcf6e6;
+    --text-muted: #a9b3cc;
+    --accent: #4fb0f5;
+    --accent-soft: rgba(21, 148, 233, 0.16);
+    --btn: #1594e9;
+    --btn-text: #141b2d;
+    --good: #6fd08c;
+    --bad: #ff8a80;
   }
 }
 
 :root[data-theme="dark"] {
   color-scheme: dark;
-  --bg: #0d1117;
-  --bg-panel: #11161d;
-  --bg-raised: #161c25;
-  --border: #232b36;
-  --text: #e6edf3;
-  --text-muted: #8b949e;
-  --accent: #58a6ff;
-  --accent-soft: rgba(88, 166, 255, 0.12);
-  --good: #3fb950;
-  --bad: #f85149;
+  --bg: #141b2d;
+  --bg-panel: #1b2540;
+  --bg-raised: #222e50;
+  --border: #2b3556;
+  --text: #fcf6e6;
+  --text-muted: #a9b3cc;
+  --accent: #4fb0f5;
+  --accent-soft: rgba(21, 148, 233, 0.16);
+  --btn: #1594e9;
+  --btn-text: #141b2d;
+  --good: #6fd08c;
+  --bad: #ff8a80;
 }
 
 * {
@@ -97,48 +108,46 @@ body {
 
 .topbar {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   justify-content: space-between;
-  padding: 16px 24px;
-  border-bottom: 1px solid var(--border);
-  background: var(--bg-panel);
+  padding: 10px 24px;
+  border-bottom: 2px solid #000;
+  background: var(--head);
+  color: var(--head-text);
 }
 
 .brand {
   display: flex;
-  align-items: baseline;
-  gap: 10px;
+  align-items: center;
+  gap: 14px;
 }
 
-.brand-mark {
-  font-size: 20px;
-}
-
-.brand-name {
-  font-family: var(--font-mono);
-  font-weight: 600;
-  font-size: 17px;
+.brand-logo {
+  display: block;
+  height: 34px;
+  width: auto;
 }
 
 .brand-tag {
-  color: var(--text-muted);
+  color: var(--head-text);
   font-size: 13px;
 }
 
 .repo-link,
 .admin-link {
-  color: var(--text-muted);
+  color: var(--head-text);
   text-decoration: none;
   font-size: 14px;
-  border: 1px solid var(--border);
+  border: 1px solid rgba(20, 27, 45, 0.55);
   border-radius: 6px;
   padding: 5px 11px;
 }
 
 .repo-link:hover,
 .admin-link:hover {
-  color: var(--text);
-  border-color: var(--accent);
+  color: var(--head-text);
+  background: rgba(255, 255, 255, 0.25);
+  border-color: var(--head-text);
 }
 
 .topbar-actions {
@@ -154,7 +163,7 @@ body {
   width: 32px;
   height: 32px;
   background: transparent;
-  border: 1px solid var(--border);
+  border: 1px solid rgba(20, 27, 45, 0.55);
   border-radius: 6px;
   cursor: pointer;
   font-size: 15px;
@@ -163,14 +172,15 @@ body {
 }
 
 .theme-toggle:hover {
-  border-color: var(--accent);
+  background: rgba(255, 255, 255, 0.25);
+  border-color: var(--head-text);
 }
 
 .layout {
   display: grid;
   grid-template-columns: 400px 1fr;
   gap: 0;
-  min-height: calc(100vh - 57px);
+  min-height: calc(100vh - 59px);
 }
 
 .panel {
@@ -328,11 +338,8 @@ select:disabled {
   align-items: center;
   justify-content: center;
   gap: 8px;
-  background: var(--accent);
-  /* Fixed white, not a theme token: the button's own background is always
-     the same mid-tone blue regardless of light/dark theme, so the text
-     color that contrasts against it doesn't need to change either. */
-  color: #ffffff;
+  background: var(--btn);
+  color: var(--btn-text);
   border: none;
   border-radius: 8px;
   padding: 11px 16px;
@@ -353,8 +360,8 @@ select:disabled {
 .spinner {
   width: 14px;
   height: 14px;
-  border: 2px solid rgba(255, 255, 255, 0.35);
-  border-top-color: #ffffff;
+  border: 2px solid color-mix(in srgb, var(--btn-text) 35%, transparent);
+  border-top-color: var(--btn-text);
   border-radius: 50%;
   animation: spin 0.7s linear infinite;
 }
@@ -388,6 +395,13 @@ select:disabled {
   color: var(--text-muted);
   text-align: center;
   gap: 4px;
+}
+
+.empty-mascot {
+  display: block;
+  width: min(300px, 70%);
+  height: auto;
+  margin: 0 auto 12px;
 }
 
 .muted {
@@ -624,8 +638,8 @@ select:disabled {
 
 .article-text {
   font-family: var(--font-serif);
-  font-size: 16px;
-  line-height: 1.55;
+  font-size: 17px;
+  line-height: 1.6;
   color: var(--text);
   max-width: 78ch;
 }
@@ -773,7 +787,7 @@ dl dd {
   }
   .topbar-actions {
     flex-wrap: wrap;
-    gap: 6px 8px;
+    gap: 4px 6px;
     width: 100%;
   }
   .admin-link,
@@ -781,7 +795,7 @@ dl dd {
     display: inline-flex;
     align-items: center;
     min-height: 44px;
-    padding: 0 14px;
+    padding: 0 10px;
   }
   .theme-toggle {
     width: 44px;
@@ -846,6 +860,10 @@ dl dd {
   color: var(--text-muted);
   font-size: 14px;
   line-height: 1.5;
+}
+
+.public-note a {
+  color: var(--accent);
 }
 
 .examples {

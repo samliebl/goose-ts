@@ -4,6 +4,18 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>regoose</title>
+    <meta name="description" content="Turn a web page into clean, readable text." />
+    <meta name="theme-color" content="#1594e9" />
+    <link rel="icon" href="/brand/favicon.svg" type="image/svg+xml" />
+    <link rel="icon" href="/brand/favicon-32.png" type="image/png" sizes="32x32" />
+    <link rel="apple-touch-icon" href="/brand/apple-touch-icon.png" />
+    <link rel="manifest" href="/brand/site.webmanifest" />
+    <meta property="og:site_name" content="regoose" />
+    <meta property="og:title" content="regoose: a healthier reading experience" />
+    <meta property="og:description" content="Turn a web page into clean, readable text." />
+    <meta property="og:type" content="website" />
+    <meta property="og:image" content="https://regoose.com/brand/og.png" />
+    <meta name="twitter:card" content="summary_large_image" />
     <link rel="stylesheet" href="fonts.css" />
     <link rel="stylesheet" href="style.css" />
     <script src="theme-init.js"></script>
@@ -11,8 +23,14 @@
   <body>
     <header class="topbar">
       <div class="brand">
-        <span class="brand-mark">🪿</span>
-        <span class="brand-name">regoose</span>
+        <a href="/" aria-label="regoose home"
+          ><img
+            class="brand-logo"
+            src="/brand/wordmark-cream.svg"
+            alt="regoose"
+            width="127"
+            height="34"
+        /></a>
         <span class="brand-tag">A healthier reading experience.</span>
       </div>
       <div class="topbar-actions">
@@ -137,6 +155,7 @@
 
       <section class="panel results-panel">
         <div class="empty-state" id="empty-state">
+          <img class="empty-mascot" src="/brand/mascot.png" alt="" width="300" height="272" />
           <p>Nothing extracted yet.</p>
           <p class="muted">Enter a URL or paste HTML, then hit Extract.</p>
         </div>

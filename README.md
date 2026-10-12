@@ -178,10 +178,9 @@ Light/dark theme follows your OS preference by default; the toggle in the top ba
 persists that choice. Typography is self-hosted (no CDN, works offline) under
 `web/public/fonts/`, all OFL-1.1-licensed (license text alongside each in `fonts/LICENSES/`):
 [Inter](https://rsms.me/inter/) for UI text, [Iosevka](https://typeof.net/Iosevka/) for
-monospace, and [Junicode](https://junicode.sourceforge.io/) — the scholarly medievalist serif
-also listed on [Open Foundry](https://open-foundry.com/fonts/junicode) — for the article body.
+monospace, and [Source Serif 4](https://github.com/adobe-fonts/source-serif) for the article body.
 Each falls back to a same-genre system stack if it fails to load (Inter → Apple system font,
-Iosevka → SF Mono by name → Menlo, Junicode → Garamond). SF Mono itself isn't bundled — Apple's
+Iosevka → SF Mono by name → Menlo, Source Serif 4 → Georgia). SF Mono itself isn't bundled — Apple's
 license doesn't permit redistributing it — but naming it in the stack picks it up for free on a
 Mac that already has it installed.
 

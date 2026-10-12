@@ -31,16 +31,23 @@ export const page = (title: string, body: string, options: PageOptions = {}): st
   return `<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>${escapeHtml(title)}</title>
+<meta name="theme-color" content="#1594e9">
+<link rel="icon" href="/brand/favicon.svg" type="image/svg+xml"><link rel="icon" href="/brand/favicon-32.png" type="image/png" sizes="32x32">
+<link rel="apple-touch-icon" href="/brand/apple-touch-icon.png"><link rel="manifest" href="/brand/site.webmanifest">
+<meta property="og:site_name" content="regoose"><meta property="og:title" content="${escapeHtml(title)}"><meta property="og:type" content="website">
+<meta property="og:image" content="https://regoose.com/brand/og.png"><meta name="twitter:card" content="summary_large_image">
 <style>
   :root { --bg:#fcf6e6; --panel:#ffffff; --text:#141b2d; --muted:#4a5470; --link:#0a66b8; --border:#d8d2c0; --btn:#0a66b8; --btn-text:#ffffff; --bad:#b3261e; --good:#1a6b36; --bar:#0a66b8; --head:#1594e9; --head-text:#141b2d; }
-  @media (prefers-color-scheme: dark) { :root { --bg:#141b2d; --panel:#1b2540; --text:#fcf6e6; --muted:#a9b3cc; --link:#1594e9; --border:#2b3556; --btn:#1594e9; --btn-text:#141b2d; --bad:#ff8a80; --good:#6fd08c; --bar:#1594e9; --head:#1b2540; --head-text:#fcf6e6; } }
+  @media (prefers-color-scheme: dark) { :root { --bg:#141b2d; --panel:#1b2540; --text:#fcf6e6; --muted:#a9b3cc; --link:#4fb0f5; --border:#2b3556; --btn:#1594e9; --btn-text:#141b2d; --bad:#ff8a80; --good:#6fd08c; --bar:#1594e9; --head:#1594e9; --head-text:#141b2d; } }
   * { box-sizing: border-box; }
   body { margin:0; font:16px/1.6 system-ui,-apple-system,"Segoe UI",sans-serif; color:var(--text); background:var(--bg); }
   a { color:var(--link); }
   header.site { background:var(--head); color:var(--head-text); border-bottom:2px solid #000; }
   header.site .bar { max-width:${options.wide ? "1000px" : "760px"}; margin:0 auto; padding:10px 20px; display:flex; flex-wrap:wrap; gap:4px 18px; align-items:center; justify-content:space-between; }
   header.site a { color:var(--head-text); text-decoration:none; padding:10px 2px; display:inline-block; min-height:44px; line-height:24px; }
-  header.site a.brand { font-weight:700; font-size:18px; font-family:ui-monospace,Menlo,monospace; }
+  header.site a.brand { padding:6px 2px; } header.site a.brand img { display:block; height:34px; width:auto; }
+  img.hero { float:right; width:min(230px,42%); height:auto; margin:0 0 12px 18px; }
+  @media (max-width:520px) { img.hero { float:none; display:block; width:min(260px,75%); margin:0 auto 8px; } }
   header.site nav { display:flex; flex-wrap:wrap; gap:0 16px; }
   header.site a:hover { text-decoration:underline; }
   main { max-width:${options.wide ? "1000px" : "760px"}; margin:0 auto; padding:28px 20px 40px; }
@@ -81,7 +88,7 @@ export const page = (title: string, body: string, options: PageOptions = {}): st
   li { margin:6px 0; }
   .legal h2 { margin-top:28px; } .legal p, .legal li { max-width:70ch; }
 </style></head><body>
-<header class="site"><div class="bar"><a class="brand" href="/">regoose</a><nav aria-label="Main"><a href="/about">about</a><a href="/author">author</a><a href="${REPO}" rel="noopener">github</a>${account}</nav></div></header>
+<header class="site"><div class="bar"><a class="brand" href="/" aria-label="regoose home"><img src="/brand/wordmark-cream.svg" alt="regoose" width="127" height="34"></a><nav aria-label="Main"><a href="/about">about</a><a href="/author">author</a><a href="${REPO}" rel="noopener">github</a>${account}</nav></div></header>
 <main>${body}</main>
 <footer class="site">regoose is a portfolio project by Sam Liebl. No ads, no trackers, and no cookies unless you sign in.<br>
 <a href="/terms">Terms</a> <a href="/privacy">Privacy</a> <a href="/about">About</a> <a href="/author">Author</a> <a href="${REPO}" rel="noopener">Source on GitHub</a></footer>

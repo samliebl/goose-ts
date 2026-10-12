@@ -174,6 +174,7 @@ app.get("/about", staticPage("About regoose", aboutBody));
 app.get("/author", staticPage("About the author", authorBody));
 app.get("/terms", staticPage("Terms of Service", termsBody));
 app.get("/privacy", staticPage("Privacy Policy", privacyBody));
+app.use("/brand", express.static(join(here, "public", "brand"), { maxAge: "1d" }));
 app.use("/author", express.static(join(here, "public", "author"), { maxAge: "1d" }));
 
 app.get("/robots.txt", (_req, res) => {
