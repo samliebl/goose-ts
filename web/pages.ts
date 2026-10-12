@@ -16,38 +16,38 @@ export function aboutBody(): string {
   const domains = OPEN_SOURCE_DOMAINS.map((d) => `<code>${escapeHtml(d)}</code>`).join(", ");
 
   return `<h1>About regoose</h1>
-<p>regoose turns a web page into clean, readable text: the article, without the clutter. It's a portfolio project built on <a href="${GITHUB_REPO_URL}" rel="noopener">goose-ts</a>, an open-source TypeScript port of python-goose, and the whole thing &mdash; library, command line tool and this site &mdash; is <a href="${GITHUB_REPO_URL}" rel="noopener">open source</a>.</p>
+<p>regoose turns a web page into clean, readable text: the article, without the clutter. It’s a portfolio project built on <a href="${GITHUB_REPO_URL}" rel="noopener">goose-ts</a>, an open-source TypeScript port of python-goose, and the whole thing &mdash; library, command line tool and this site &mdash; is <a href="${GITHUB_REPO_URL}" rel="noopener">open source</a>.</p>
 <p><a class="btn" href="/">Open the tool</a> &nbsp; <a href="/request-access">Request full access</a> &middot; <a href="/redeem">I have an access code</a></p>
 
-<h2>What's limited about this demo, and why</h2>
-<p>The public demo is deliberately smaller than the tool. Fetching other people's pages on behalf of strangers is something I want to do carefully, and this runs on one small server paid for by one person. Here is what's restricted and the reasoning behind each limit.</p>
+<h2>What’s limited about this demo, and why</h2>
+<p>The public demo is deliberately smaller than the tool. Fetching other people’s pages on behalf of strangers is something I want to do carefully, and this runs on one small server paid for by one person. Here is what’s restricted and the reasoning behind each limit.</p>
 <ul>
-  <li><strong>Only a short list of sites can be fetched by URL.</strong> The demo fetches from sites that publish openly licensed or public-domain material and where I've checked extraction works: ${domains}. <em>Why:</em> a tool that fetches any address for anonymous visitors can be pointed at sites that don't want to be scraped, turned into a way to bypass paywalls, or used as a relay to attack other servers. Restricting the demo to sites that welcome reuse removes that risk entirely and keeps me on the right side of other people's terms.</li>
-  <li><strong>Pasting HTML works for any page.</strong> If you've already got a page's source, paste it. <em>Why:</em> nothing is fetched from anywhere, so there's nobody to impose on.</li>
-  <li><strong>The demo doesn't fetch or score images.</strong> <em>Why:</em> every image is another request to someone else's server, and image scoring is the slowest, most abusable part of an extraction. Signed-in members get image detection.</li>
+  <li><strong>Only a short list of sites can be fetched by URL.</strong> The demo fetches from sites that publish openly licensed or public-domain material and where I’ve checked extraction works: ${domains}. <em>Why:</em> a tool that fetches any address for anonymous visitors can be pointed at sites that don’t want to be scraped, turned into a way to bypass paywalls, or used as a relay to attack other servers. Restricting the demo to sites that welcome reuse removes that risk entirely and keeps me on the right side of other people’s terms.</li>
+  <li><strong>Pasting HTML works for any page.</strong> If you’ve already got a page’s source, paste it. <em>Why:</em> nothing is fetched from anywhere, so there’s nobody to impose on.</li>
+  <li><strong>The demo doesn’t fetch or score images.</strong> <em>Why:</em> every image is another request to someone else’s server, and image scoring is the slowest, most abusable part of an extraction. Signed-in members get image detection.</li>
   <li><strong>Usage is rate limited:</strong> ${anon.ratePerWindow} extractions per ${anon.windowMs / 60_000} minutes per visitor, and ${anon.dailyCap} a day across everyone in the public demo. Members get ${member.ratePerWindow} per ${member.windowMs / 60_000} minutes. <em>Why:</em> it keeps the service available to everyone, stops runaway automation, and puts a ceiling on what it costs to run. When a limit is reached, the page tells you and you can try again later.</li>
   <li><strong>Size limits:</strong> pages up to ${mb(anon.maxResponseBytes)} (${mb(member.maxResponseBytes)} for members) and pasted HTML up to ${mb(anon.maxRawHtmlChars)}. <em>Why:</em> the server is small, and a very large page could take it down for everyone.</li>
-  <li><strong>It obeys robots.txt.</strong> If a site's robots.txt asks automated tools to stay away from a page (or can't be read), regoose won't fetch it, and says why. News sites often do this. <em>Why:</em> it's the established way for a site to say &ldquo;no&rdquo;, and respecting it is the right default.</li>
-  <li><strong>It doesn't run JavaScript.</strong> Pages that build their content in the browser can come back empty or thin. <em>Why:</em> that needs a full headless browser, which is far heavier and costlier than this project is meant to be.</li>
-  <li><strong>It doesn't get around paywalls or logins.</strong> It sees what an anonymous visitor would see. <em>Why:</em> that's the line between a reading tool and a circumvention tool.</li>
-  <li><strong>Extraction is heuristic.</strong> It's an algorithm that guesses which part of a page is the article, so some pages (live blogs, index pages, unusual layouts) come out incomplete.</li>
-  <li><strong>Nothing is saved.</strong> There's no history, library, or bookmarking. <em>Why:</em> not storing what people read is a privacy feature, and it keeps the project simple.</li>
+  <li><strong>It obeys robots.txt.</strong> If a site’s robots.txt asks automated tools to stay away from a page (or can’t be read), regoose won’t fetch it, and says why. News sites often do this. <em>Why:</em> it’s the established way for a site to say &ldquo;no&rdquo;, and respecting it is the right default.</li>
+  <li><strong>It doesn’t run JavaScript.</strong> Pages that build their content in the browser can come back empty or thin. <em>Why:</em> that needs a full headless browser, which is far heavier and costlier than this project is meant to be.</li>
+  <li><strong>It doesn’t get around paywalls or logins.</strong> It sees what an anonymous visitor would see. <em>Why:</em> that’s the line between a reading tool and a circumvention tool.</li>
+  <li><strong>Extraction is heuristic.</strong> It’s an algorithm that guesses which part of a page is the article, so some pages (live blogs, index pages, unusual layouts) come out incomplete.</li>
+  <li><strong>Nothing is saved.</strong> There’s no history, library, or bookmarking. <em>Why:</em> not storing what people read is a privacy feature, and it keeps the project simple.</li>
   <li><strong>The server naps when idle,</strong> so the first visit after a quiet spell can take a few seconds to wake up.</li>
 </ul>
 
 <h2>Full access</h2>
-<p>Full access lifts the URL list (any publicly reachable page), turns on image detection, and raises the limits. It's by invitation: <a href="/request-access">tell me a bit about what you'd like to use it for</a> and I'll get back to you by email with an access code. There are no passwords &mdash; you enter the code once, and afterwards you can return with an emailed sign-in link.</p>
+<p>Full access lifts the URL list (any publicly reachable page), turns on image detection, and raises the limits. It’s by invitation: <a href="/request-access">tell me a bit about what you’d like to use it for</a> and I’ll get back to you by email with an access code. There are no passwords &mdash; you enter the code once, and afterwards you can return with an emailed sign-in link.</p>
 
 <h2>How it behaves toward other sites</h2>
 <ul>
   <li><strong>It identifies itself.</strong> Requests carry the User-Agent <code>${escapeHtml(SERVER_USER_AGENT)}</code>, which points to this page.</li>
   <li><strong>It respects robots.txt</strong>, as above.</li>
-  <li><strong>One page per request.</strong> It doesn't crawl, follow links, or run in the background.</li>
+  <li><strong>One page per request.</strong> It doesn’t crawl, follow links, or run in the background.</li>
   <li><strong>It refuses private and internal network addresses,</strong> on every redirect and for every image.</li>
 </ul>
 
 <h2>Want regoose to stay away from your site?</h2>
-<p>Add a rule for <code>regoose</code> to your <code>robots.txt</code> (<code>User-agent: regoose</code> then <code>Disallow: /</code>) and it stops immediately. Or contact me at ${contactHtml()} and I'll block it by hand.</p>
+<p>Add a rule for <code>regoose</code> to your <code>robots.txt</code> (<code>User-agent: regoose</code> then <code>Disallow: /</code>) and it stops immediately. Or contact me at ${contactHtml()} and I’ll block it by hand.</p>
 
 <p class="muted">See also the <a href="/terms">Terms of Service</a>, the <a href="/privacy">Privacy Policy</a>, and the <a href="/author">author page</a>.</p>`;
 }
@@ -97,7 +97,7 @@ export function loginBody(options: { publicMode: boolean }): string {
   <input type="email" name="email" placeholder="you@example.com" autocomplete="email" required autofocus aria-label="Email address">
   <button type="submit">Email me a link</button>
 </form>
-<p class="muted">If that address has access, a sign-in link will be emailed to it. Links expire in 15 minutes and work once. There's no password.</p>
+<p class="muted">If that address has access, a sign-in link will be emailed to it. Links expire in 15 minutes and work once. There’s no password.</p>
 <p><a href="/redeem">I have an access code</a> &middot; <a href="/request-access">Request access</a></p>
 ${options.publicMode ? '<p class="muted"><a href="/">&larr; Back to the public demo</a></p>' : ""}`;
 }
@@ -106,7 +106,7 @@ export function checkEmailBody(): string {
   return `<h1>Check your email</h1><p>If that address has access, a sign-in link is on its way. It works once and expires in 15 minutes.</p><p class="muted"><a href="/login">&larr; Back</a></p>`;
 }
 
-/** Email links open this, and a button confirms: a mail scanner that "clicks" the link can't use it up. */
+/** Email links open this, and a button confirms: a mail scanner that "clicks" the link can’t use it up. */
 export function verifyConfirmBody(token: string): string {
   return `<h1>Almost there</h1>
 <form method="post" action="/api/auth/verify">
@@ -122,7 +122,7 @@ export function linkExpiredBody(): string {
 
 export function requestAccessBody(): string {
   return `<h1>Request full access</h1>
-<p>The public demo covers pasted HTML and a short list of open sites. Full access works on any public page. Tell me a little about what you'd like to use it for and I'll reply by email &mdash; I read every request.</p>
+<p>The public demo covers pasted HTML and a short list of open sites. Full access works on any public page. Tell me a little about what you’d like to use it for and I’ll reply by email &mdash; I read every request.</p>
 <form method="post" action="/api/request-access">
   <label for="email">Your email address</label>
   <input id="email" type="email" name="email" autocomplete="email" required>
@@ -132,11 +132,11 @@ export function requestAccessBody(): string {
   ${termsConsent()}
   <button type="submit">Send request</button>
 </form>
-<p class="muted">Your email and message are sent to me and stored until I've replied (and for 90 days after), then deleted. I won't use them for anything else. <a href="/privacy">Privacy Policy</a></p>`;
+<p class="muted">Your email and message are sent to me and stored until I’ve replied (and for 90 days after), then deleted. I won’t use them for anything else. <a href="/privacy">Privacy Policy</a></p>`;
 }
 
 export function requestReceivedBody(): string {
-  return `<h1>Thanks &mdash; request received</h1><p>I'll look it over and reply by email. If I approve it, you'll get an access code.</p><p class="muted"><a href="/">&larr; Back to the demo</a></p>`;
+  return `<h1>Thanks &mdash; request received</h1><p>I’ll look it over and reply by email. If I approve it, you’ll get an access code.</p><p class="muted"><a href="/">&larr; Back to the demo</a></p>`;
 }
 
 export function redeemBody(prefill: { email?: string; code?: string }, error?: string): string {
@@ -188,7 +188,7 @@ ${flash ? `<p class="flash">${escapeHtml(flash)}</p>` : ""}
       ? ""
       : `<p class="muted">Member since ${day(info.since)} &middot; last used ${day(info.lastSeenAt)} &middot; ${info.extractions} extractions &middot; accepted terms ${escapeHtml(info.termsVersion ?? "&mdash;")} on ${day(info.termsAcceptedAt)}</p>`
   }
-  <p class="muted">This is everything regoose keeps about you. It doesn't keep what you read.</p>
+  <p class="muted">This is everything regoose keeps about you. It doesn’t keep what you read.</p>
 </div>
 <h2>Sign out</h2>
 <form method="post" action="/api/auth/logout" class="inline"><button class="secondary" type="submit">Sign out of this device</button></form>
@@ -197,7 +197,7 @@ ${
   info.isOwner
     ? ""
     : `<h2>Delete my account</h2>
-<p>This erases your email address and everything else held about you, and ends access on every device immediately. It can't be undone; to come back you'd need a new access code.</p>
+<p>This erases your email address and everything else held about you, and ends access on every device immediately. It can’t be undone; to come back you’d need a new access code.</p>
 <form method="post" action="/account/delete">
   <label class="check"><input type="checkbox" name="confirm" value="1" required> <span>Yes, delete my account and data.</span></label>
   <button class="danger" type="submit">Delete my account</button>

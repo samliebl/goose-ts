@@ -138,7 +138,7 @@ describe("about page matches the limits in the code", () => {
   });
 
   it("explains each restriction with a reason", () => {
-    expect(about).toContain("What&#39;s limited".replace("&#39;", "'"));
+    expect(about).toContain("What\u2019s limited");
     expect((about.match(/<em>Why:<\/em>/g) ?? []).length).toBeGreaterThanOrEqual(6);
   });
 });

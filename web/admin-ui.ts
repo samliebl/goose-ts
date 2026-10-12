@@ -3,23 +3,23 @@ import type { Count, Summary } from "./analytics.js";
 import { escapeHtml } from "./html.js";
 
 export const FLASH_MESSAGES: Record<string, { text: string; bad?: boolean }> = {
-  invited: { text: "Invitation sent. They'll get an email with an access code." },
+  invited: { text: "Invitation sent. They’ll get an email with an access code." },
   resent: { text: "A new access code was sent. The old one no longer works." },
   approved: { text: "Approved. An access code was emailed to them." },
-  declined: { text: "Declined. Nothing was sent; reply to them yourself if you'd like to." },
+  declined: { text: "Declined. Nothing was sent; reply to them yourself if you’d like to." },
   removed: {
     text: "Removed. Everything held about that address was erased and their sessions ended.",
   },
   signedout: { text: "Signed out of every device." },
-  "bad-email": { text: "That doesn't look like a valid email address.", bad: true },
-  "is-owner": { text: "That's your own address; you already have access.", bad: true },
+  "bad-email": { text: "That doesn’t look like a valid email address.", bad: true },
+  "is-owner": { text: "That’s your own address; you already have access.", bad: true },
   "is-active": { text: "They already have access.", bad: true },
   "mail-failed": {
-    text: "The invitation was created but the email couldn't be sent. Use Resend code to try again.",
+    text: "The invitation was created but the email couldn’t be sent. Use Resend code to try again.",
     bad: true,
   },
-  cap: { text: "Today's limit on invitation emails has been reached.", bad: true },
-  "not-found": { text: "That one wasn't found (it may already have been handled).", bad: true },
+  cap: { text: "Today’s limit on invitation emails has been reached.", bad: true },
+  "not-found": { text: "That one wasn’t found (it may already have been handled).", bad: true },
 };
 
 export function flashHtml(code: string | undefined): string {
@@ -151,7 +151,7 @@ ${barChart(
   { a: "visitors", b: "extractions" },
 )}</div>
 
-<div class="card"><h3 style="margin-top:0">Today's usage against the daily caps</h3>
+<div class="card"><h3 style="margin-top:0">Today’s usage against the daily caps</h3>
 <p style="margin:0">Public demo: <strong>${usageToday.anon}</strong> of ${usageToday.anonCap} &middot; Members: <strong>${usageToday.member}</strong> of ${usageToday.memberCap}</p></div>
 
 <div class="grid2">
@@ -168,13 +168,13 @@ ${countTable("Extractions by tier", s.extractionsByTier)}
 ${countTable("Pasted HTML vs URL", s.modes)}
 ${countTable("Sites extracted successfully", s.hosts)}
 ${countTable("Sites that refused us (robots.txt or blocking)", s.refusedHosts)}
-${countTable("Sites visitors asked for that the demo won't fetch", s.wantedHosts, "None yet. This is a good guide for what to add to the allowlist.")}
+${countTable("Sites visitors asked for that the demo won’t fetch", s.wantedHosts, "None yet. This is a good guide for what to add to the allowlist.")}
 </div>
 
 <div class="card"><h3 style="margin-top:0">Funnel (visitors, unique per day, summed)</h3>
 <p style="margin:0">Visited <strong>${s.funnel.visited}</strong> &rarr; ran an extraction <strong>${s.funnel.extracted}</strong> (${pct(s.funnel.extracted, s.funnel.visited)}) &rarr; downloaded a result <strong>${s.funnel.exported}</strong> (${pct(s.funnel.exported, s.funnel.extracted)})</p></div>
 
-<p class="muted">Analytics are first-party and cookieless. Visitors are a hash that resets daily, so the same person on two days counts twice, and nobody can be followed across days. IP addresses, full URLs, and member identities are never recorded; the owner's own activity and bots are excluded; Do Not Track / Global Privacy Control visitors appear only in anonymous totals. Events are deleted after 90 days. The same numbers are available as JSON at <code>/api/admin/analytics?days=${days}</code>.</p>`;
+<p class="muted">Analytics are first-party and cookieless. Visitors are a hash that resets daily, so the same person on two days counts twice, and nobody can be followed across days. IP addresses, full URLs, and member identities are never recorded; the owner’s own activity and bots are excluded; Do Not Track / Global Privacy Control visitors appear only in anonymous totals. Events are deleted after 90 days. The same numbers are available as JSON at <code>/api/admin/analytics?days=${days}</code>.</p>`;
 }
 
 // --- Members ---
@@ -208,7 +208,7 @@ export function membersBody(members: Member[], owner: string, flash?: string): s
   return `<h1>Members</h1>
 ${flashHtml(flash)}
 <div class="card"><h3 style="margin-top:0">Invite someone</h3>
-<p class="muted" style="margin-top:0">Enter their email. They get a one-time access code, enter it once, and from then on come back with an emailed sign-in link. That's all they have to do.</p>
+<p class="muted" style="margin-top:0">Enter their email. They get a one-time access code, enter it once, and from then on come back with an emailed sign-in link. That’s all they have to do.</p>
 <form class="row" method="post" action="/api/admin/invite">
 <input type="email" name="email" placeholder="their@email.com" required aria-label="Their email address">
 <input type="text" name="note" placeholder="Private note (optional)" maxlength="300" aria-label="Private note">
@@ -233,7 +233,7 @@ export function requestsBody(requests: AccessRequest[], flash?: string): string 
 <p style="white-space:pre-wrap;margin:8px 0">${r.message ? escapeHtml(r.message) : '<span class="muted">(no message)</span>'}</p>
 <form class="inline" method="post" action="/api/admin/requests/approve"><input type="hidden" name="id" value="${escapeHtml(r.id)}"><button type="submit">Approve &amp; email code</button></form>
 <form class="inline" method="post" action="/api/admin/requests/decline"><input type="hidden" name="id" value="${escapeHtml(r.id)}"><button class="secondary" type="submit">Decline</button></form>
-<p class="muted" style="margin:8px 0 0">The notification email's Reply-To is their address, so you can talk to them first and approve afterwards.</p></div>`;
+<p class="muted" style="margin:8px 0 0">The notification email’s Reply-To is their address, so you can talk to them first and approve afterwards.</p></div>`;
 
   return `<h1>Access requests</h1>
 ${flashHtml(flash)}

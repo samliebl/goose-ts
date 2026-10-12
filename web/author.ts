@@ -1,6 +1,6 @@
 /**
  * Content for /author. Everything marked as a placeholder is meant to be
- * replaced; the admin overview lists what's still unfinished.
+ * replaced; the admin overview lists what’s still unfinished.
  *
  * Photos: put image files in web/public/author/ and list them under `photos`
  * (src is relative to that folder). With no photos the page shows a simple
@@ -16,7 +16,7 @@ export const AUTHOR = {
   name: "Sam Liebl",
   tagline: "[Placeholder] A one-line description of what you do.",
   bio: [
-    "[Placeholder] A short paragraph about you: your background, what you're working on, and what you care about.",
+    "[Placeholder] A short paragraph about you: your background, what you’re working on, and what you care about.",
     "[Placeholder] A second paragraph about why you built regoose and what you hope people take from it.",
   ],
   photos: [] as Array<{ src: string; alt: string }>,

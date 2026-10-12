@@ -9,7 +9,7 @@ export interface PageViewer {
 
 export interface PageOptions {
   wide?: boolean;
-  /** Who's looking, for the sign-in / account / admin links in the header. */
+  /** Who’s looking, for the sign-in / account / admin links in the header. */
   viewer?: PageViewer | null;
   /** Leave the analytics beacon off (admin and account pages). */
   analytics?: boolean;
