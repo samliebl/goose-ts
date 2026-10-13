@@ -1,3 +1,4 @@
+import { isSameSiteRequest } from "./csrf.js";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import express, { type NextFunction, type Request, type Response } from "express";
@@ -116,7 +117,8 @@ app.use((_req, res, next) => {
   res.setHeader("Content-Security-Policy", CONTENT_SECURITY_POLICY);
   res.setHeader("X-Content-Type-Options", "nosniff");
   res.setHeader("X-Frame-Options", "DENY");
-  res.setHeader("Referrer-Policy", "no-referrer");
+  // same-origin: nothing is sent to other sites, and same-site form posts keep a usable Origin.
+  res.setHeader("Referrer-Policy", "same-origin");
   res.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
   if (IS_PROD) res.setHeader("Strict-Transport-Security", "max-age=31536000");
   next();
@@ -127,17 +129,11 @@ app.use((_req, res, next) => {
 // from being sent on cross-site POSTs; this refuses them outright as well.
 app.use((req, res, next) => {
   if (req.method === "GET" || req.method === "HEAD" || req.method === "OPTIONS") return next();
-  const origin = req.get("origin");
-  let sameSite = true;
-  if (origin) {
-    try {
-      sameSite = new URL(origin).host === req.get("host");
-    } catch {
-      sameSite = false;
-    }
-  } else if (req.get("sec-fetch-site") === "cross-site") {
-    sameSite = false;
-  }
+  const sameSite = isSameSiteRequest({
+    origin: req.get("origin"),
+    host: req.get("host"),
+    secFetchSite: req.get("sec-fetch-site"),
+  });
   if (sameSite) return next();
   if (req.path.startsWith("/api/")) {
     res.status(403).json({ ok: false, error: "Cross-site requests aren't allowed." });
