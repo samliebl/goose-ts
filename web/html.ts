@@ -85,7 +85,7 @@ export const page = (title: string, body: string, options: PageOptions = {}): st
   @media (prefers-color-scheme: dark) { :root { --bg:#141b2d; --panel:#1b2540; --text:#fcf6e6; --muted:#a9b3cc; --link:#4fb0f5; --border:#2b3556; --btn:#1594e9; --btn-text:#141b2d; --bad:#ff8a80; --good:#6fd08c; --bar:#1594e9; --head:#1594e9; --head-text:#fcf6e6; --cream:#fcf6e6; } }
   * { box-sizing: border-box; }
   html { -webkit-text-size-adjust:100%; }
-  body { margin:0; font:16px/1.65 "Inter Variable",-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif; color:var(--text); background:var(--bg); -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale; text-rendering:optimizeLegibility; font-kerning:normal; font-variant-ligatures:common-ligatures; }
+  body { display:flex; flex-direction:column; min-height:100vh; margin:0; font:16px/1.65 "Inter Variable",-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif; color:var(--text); background:var(--bg); -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale; text-rendering:optimizeLegibility; font-kerning:normal; font-variant-ligatures:common-ligatures; }
   a { color:var(--link); text-underline-offset:3px; text-decoration-thickness:1px; }
   img.wm { height:.84em; width:auto; vertical-align:-.2265em; }
   header.site { position:relative; background:var(--head); color:var(--head-text); border-bottom:2px solid #000; }
@@ -107,10 +107,10 @@ export const page = (title: string, body: string, options: PageOptions = {}): st
     header.site nav a:last-child { border-bottom:0; }
     img.hero { float:none; display:block; width:min(180px,55%); margin:0 auto 20px; }
   }
-  main { max-width:${options.wide ? "1000px" : "760px"}; margin:0 auto; padding:48px 24px 72px; }
+  main { width:100%; flex:1 0 auto; max-width:${options.wide ? "1000px" : "760px"}; margin:0 auto; padding:48px 24px 72px; }
   main.narrow { max-width:440px; }
-  footer.site { background:linear-gradient(var(--border),var(--border)) 24px 0 / calc(100% - 48px) 1px no-repeat; max-width:${options.wide ? "1000px" : "760px"}; margin:0 auto; padding:28px 24px 48px; color:var(--muted); font-size:14px; line-height:1.7; }
-  footer.site a { color:var(--muted); display:inline-block; padding:10px 0; margin-right:18px; min-height:44px; }
+  footer.site { width:100%; text-align:center; background:linear-gradient(var(--border),var(--border)) 24px 0 / calc(100% - 48px) 1px no-repeat; max-width:${options.wide ? "1000px" : "760px"}; margin:0 auto; padding:24px 24px 20px; color:var(--muted); font-size:14px; line-height:1.7; }
+  footer.site a { color:var(--muted); display:inline-block; padding:10px 0; margin:0 9px; min-height:44px; }
   h1 { font-size:30px; line-height:1.2; letter-spacing:-.015em; margin:0 0 20px; } h2 { font-size:20px; line-height:1.35; letter-spacing:-.01em; margin:44px 0 12px; } h3 { font-size:16px; margin:28px 0 6px; } p { margin:0 0 1em; }
   code { background:var(--panel); padding:1px 5px; border-radius:4px; font-size:14px; word-break:break-word; }
   input[type=email], input[type=text], textarea { width:100%; padding:12px; font:inherit; border:1px solid var(--border); border-radius:8px; background:var(--panel); color:var(--text); }
@@ -143,11 +143,14 @@ export const page = (title: string, body: string, options: PageOptions = {}): st
   .avatar { width:140px; height:140px; border-radius:50%; background:var(--head); color:var(--head-text); display:flex; align-items:center; justify-content:center; font-size:48px; font-weight:700; border:3px solid #000; }
   .photos { display:flex; flex-wrap:wrap; gap:12px; margin:16px 0; } .photos img { max-width:100%; height:auto; max-height:320px; border-radius:12px; border:2px solid #000; }
   li { margin:8px 0; }
+  ul.plain { list-style:none; margin:0; padding:0; } ul.plain li { margin:10px 0; }
+  .author-head { display:flex; flex-wrap:wrap; gap:24px; align-items:center; margin:8px 0 28px; } .author-head h2 { margin:0; } .author-head .tagline { margin:4px 0 0; color:var(--muted); }
+  img.portrait { width:150px; height:auto; aspect-ratio:3/4; object-fit:cover; border-radius:16px; border:2px solid #000; display:block; }
   .legal h2 { margin-top:28px; } .legal p, .legal li { max-width:70ch; }
 </style></head><body>
-<header class="site"><div class="bar"><a class="brand" href="/" aria-label="regoose home"><img src="/brand/wordmark-cream.svg" alt="regoose" width="921" height="204"></a><button class="menu-toggle" type="button" aria-expanded="false" aria-controls="site-nav">Menu</button><nav id="site-nav" aria-label="Main"><a href="/about">about</a><a href="/author">author</a><a href="${REPO}" rel="noopener">github</a>${account}</nav></div></header>
+<header class="site"><div class="bar"><a class="brand" href="/" aria-label="regoose home"><img src="/brand/wordmark-cream.svg" alt="regoose" width="921" height="204"></a><button class="menu-toggle" type="button" aria-expanded="false" aria-controls="site-nav">Menu</button><nav id="site-nav" aria-label="Main"><a href="/about">about</a>${account}</nav></div></header>
 <main>${brandify(body)}</main>
-<footer class="site">${WORDMARK} is a portfolio project by Sam Liebl. No ads, no trackers and no cookies unless you sign in.<br>
+<footer class="site">${WORDMARK} is made by Sam Liebl. No ads, no trackers and no cookies unless you sign in.<br>
 <a href="/terms">Terms</a> <a href="/privacy">Privacy</a> <a href="/about">About</a> <a href="/author">Author</a> <a href="${REPO}" rel="noopener">Source on GitHub</a></footer>
 ${options.analytics === false ? "" : '<script src="/m.js" defer></script>'}
 <script src="/brand/menu.js" defer></script>

@@ -17,7 +17,7 @@ export function aboutBody(): string {
 
   return `<img class="hero" src="/brand/mark.svg" alt="" width="190" height="190">
 <h1>About regoose</h1>
-<p>regoose turns a web page into clean, readable text: the article, without the clutter. It’s a portfolio project built on <a href="${GITHUB_REPO_URL}" rel="noopener">goose-ts</a>, an open-source TypeScript port of python-goose, and the whole thing &mdash; library, command line tool and this site &mdash; is <a href="${GITHUB_REPO_URL}" rel="noopener">open source</a>.</p>
+<p>regoose turns a web page into clean, readable text: the article, without the clutter. It’s built on <a href="${GITHUB_REPO_URL}" rel="noopener">goose-ts</a>, an open-source TypeScript port of python-goose, and the whole thing &mdash; library, command line tool and this site &mdash; is <a href="${GITHUB_REPO_URL}" rel="noopener">open source</a>.</p>
 <p><a class="btn" href="/">Open the tool</a> &nbsp; <a href="/request-access">Request full access</a> &middot; <a href="/redeem">I have an access code</a></p>
 
 <h2>What’s limited about this demo, and why</h2>
@@ -56,20 +56,10 @@ export function aboutBody(): string {
 // --- Author ---
 
 export function authorBody(): string {
-  const photos = AUTHOR.photos.length
-    ? `<div class="photos">${AUTHOR.photos
-        .map(
-          (p) =>
-            `<img src="/author/${encodeURIComponent(p.src)}" alt="${escapeHtml(p.alt)}" loading="lazy">`,
-        )
-        .join("")}</div>`
+  const photo = AUTHOR.photos[0];
+  const portrait = photo
+    ? `<img class="portrait" src="/author/${encodeURIComponent(photo.src)}" alt="${escapeHtml(photo.alt)}" width="600" height="800">`
     : "";
-  const initials = AUTHOR.name
-    .split(/\s+/)
-    .map((w) => w[0] ?? "")
-    .join("")
-    .slice(0, 2)
-    .toUpperCase();
   const links = AUTHOR.links
     .map((l) =>
       l.url
@@ -77,17 +67,26 @@ export function authorBody(): string {
         : `<li><span class="muted">${escapeHtml(l.label)} &mdash; coming soon</span></li>`,
     )
     .join("");
+  const projects = AUTHOR.projects
+    .map(
+      (p) =>
+        `<li><a href="${escapeHtml(p.url)}" rel="noopener">${escapeHtml(p.label)}</a> &mdash; ${escapeHtml(p.about)}</li>`,
+    )
+    .join("");
 
   return `<h1>About the author</h1>
-<div style="display:flex;flex-wrap:wrap;gap:20px;align-items:center;margin:16px 0">
-  ${AUTHOR.photos.length ? "" : `<div class="avatar" aria-hidden="true">${escapeHtml(initials)}</div>`}
-  <div style="flex:1 1 260px"><h2 style="margin:0">${escapeHtml(AUTHOR.name)}</h2><p style="margin:4px 0 0">${escapeHtml(AUTHOR.tagline)}</p></div>
+<div class="author-head">
+  ${portrait}
+  <div>
+    <h2>${escapeHtml(AUTHOR.name)}</h2>
+    <p class="tagline">${escapeHtml(AUTHOR.tagline)}</p>
+  </div>
 </div>
-${photos}
 ${AUTHOR.bio.map((p) => `<p>${escapeHtml(p)}</p>`).join("")}
 <h2>Find me</h2>
-<ul>${links}</ul>
-<p>The source code for this project lives at <a href="${GITHUB_REPO_URL}" rel="noopener">${GITHUB_REPO_URL.replace("https://", "")}</a>.</p>`;
+<ul class="plain">${links}</ul>
+<h2>Other projects</h2>
+<ul class="plain">${projects}</ul>`;
 }
 
 // --- Signing in, requesting access, redeeming a code ---

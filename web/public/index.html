@@ -38,7 +38,6 @@
       </button>
       <div class="topbar-actions" id="site-menu">
         <a class="admin-link" href="/about">about</a>
-        <a class="admin-link" href="/author">author</a>
         <a class="admin-link hidden" id="signin-link" href="/login">sign in</a>
         <a class="admin-link hidden" id="admin-link" href="/admin">admin</a>
         <a class="admin-link hidden" id="account-link" href="/account">account</a>
@@ -51,24 +50,28 @@
           <span class="theme-icon" aria-hidden="true">🌙</span>
           <span class="theme-text">Theme</span>
         </button>
-        <a
-          class="repo-link"
-          href="https://github.com/samliebl/goose-ts"
-          target="_blank"
-          rel="noreferrer"
-          >source</a
-        >
       </div>
     </header>
 
     <main class="layout">
       <section class="panel input-panel">
-        <p class="public-note hidden" id="public-note">
-          <strong>Public demo.</strong> It fetches pages from a short list of open-source sites
-          (<span id="allowed-domains"></span>), or you can paste any page's HTML. Sign in to fetch
-          any other URL. <a href="/request-access">Request access</a> &middot;
-          <a href="/about">why is the demo limited?</a>
-        </p>
+        <div class="banner hidden" id="public-note" role="note">
+          <div class="banner-body">
+            <p>
+              <strong>Public demo.</strong> Paste any page’s HTML, or try a few open-source sites.
+              <a href="/request-access">Request access</a> for everything else.
+              <a href="/about">Why is it limited?</a>
+            </p>
+            <button
+              class="banner-close"
+              id="public-note-close"
+              type="button"
+              aria-label="Dismiss this notice"
+            >
+              ×
+            </button>
+          </div>
+        </div>
         <div class="examples hidden" id="examples" aria-label="Example pages"></div>
 
         <div class="tabs" role="tablist">
@@ -195,7 +198,7 @@
     <footer class="site-footer">
       <p>
         <img class="wm" src="/brand/wordmark-blue.svg" alt="regoose" width="921" height="204" />
-        is a portfolio project by Sam Liebl. No ads, no trackers and no cookies unless you sign in.
+        is made by Sam Liebl. No ads, no trackers and no cookies unless you sign in.
       </p>
       <p>
         <a href="/terms">Terms</a> <a href="/privacy">Privacy</a> <a href="/about">About</a>

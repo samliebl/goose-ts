@@ -14,19 +14,32 @@ export interface AuthorLink {
 
 export const AUTHOR = {
   name: "Sam Liebl",
-  tagline: "[Placeholder] A one-line description of what you do.",
+  tagline: "Developer and job seeker.",
   bio: [
-    "[Placeholder] A short paragraph about you: your background, what you’re working on and what you care about.",
-    "[Placeholder] A second paragraph about why you built regoose and what you hope people take from it.",
+    "I like simplicity and I don’t like clutter. I’ve believed for a long time that the internet is the richest source of information in human history, and that it’s hidden behind bad design, popups, videos and ads.",
+    "If I could, I’d make the internet plain text. Since I can’t, I take tools that already exist and update them for 2026. regoose is one of them.",
   ],
-  photos: [] as Array<{ src: string; alt: string }>,
+  photos: [{ src: "sam.jpg", alt: "Sam Liebl smiling, in a gray hooded sweatshirt" }] as Array<{
+    src: string;
+    alt: string;
+  }>,
   links: [
-    { label: "GitHub", url: "https://github.com/samliebl" },
-    { label: "regoose on GitHub", url: "https://github.com/samliebl/goose-ts" },
-    { label: "LinkedIn", url: "" },
-    { label: "Personal site", url: "" },
-    { label: "Email", url: "" },
+    { label: "linkedin.com/in/samliebl", url: "https://www.linkedin.com/in/samliebl" },
+    { label: "samliebl.com", url: "https://samliebl.com" },
+    { label: "github.com/samliebl", url: "https://github.com/samliebl" },
   ] as AuthorLink[],
+  projects: [
+    {
+      label: "tohode.com",
+      url: "https://tohode.com",
+      about: "find local events in Raleigh, Durham and Chapel Hill",
+    },
+    {
+      label: "truyne.com",
+      url: "https://truyne.com",
+      about: "see how your videos come across before you post them",
+    },
+  ],
 };
 
 /** What on the page is still placeholder, for the admin checklist. */

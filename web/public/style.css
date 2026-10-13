@@ -102,6 +102,9 @@ html {
 }
 
 body {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
   margin: 0;
   background: var(--bg);
   color: var(--text);
@@ -233,7 +236,8 @@ img.wm {
   display: grid;
   grid-template-columns: 440px 1fr;
   gap: 0;
-  min-height: calc(100vh - 69px);
+  flex: 1 0 auto;
+  border-bottom: 1px solid var(--border);
 }
 
 .panel {
@@ -881,7 +885,7 @@ dl dd {
     border-bottom: 1px solid rgba(252, 246, 230, 0.4);
     border-radius: 0;
   }
-  .topbar-actions > .repo-link {
+  .topbar-actions > .theme-toggle {
     border-bottom: 0;
   }
   .topbar-actions > .hidden {
@@ -940,19 +944,76 @@ dl dd {
   }
 }
 
-.public-note {
+.banner {
+  display: grid;
+  grid-template-rows: 1fr;
   margin: 0;
-  padding: 14px 16px;
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  background: var(--bg-panel);
-  color: var(--text-muted);
-  font-size: 14px;
-  line-height: 1.5;
+  transition:
+    grid-template-rows 0.28s ease,
+    margin 0.28s ease,
+    opacity 0.2s ease;
 }
 
-.public-note a {
+.banner.dismissed {
+  grid-template-rows: 0fr;
+  margin-bottom: -28px;
+  opacity: 0;
+}
+
+.banner-body {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  min-height: 0;
+  overflow: hidden;
+  padding: 14px 8px 14px 16px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--bg-raised);
+  color: var(--text);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.banner.dismissed .banner-body {
+  padding-top: 0;
+  padding-bottom: 0;
+  border-width: 0;
+}
+
+.banner-body p {
+  flex: 1;
+  margin: 0;
+}
+
+.banner-body a {
   color: var(--accent);
+}
+
+.banner-close {
+  flex: none;
+  width: 44px;
+  height: 44px;
+  margin: -10px 0 -10px 0;
+  color: var(--text-muted);
+  font: inherit;
+  font-size: 24px;
+  line-height: 1;
+  background: transparent;
+  border: 0;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.banner-close:hover {
+  color: var(--text);
+  background: var(--accent-soft);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .banner {
+    transition: none;
+  }
 }
 
 .examples {
@@ -986,20 +1047,21 @@ dl dd {
 }
 
 .site-footer {
-  max-width: 1400px;
+  width: 100%;
   margin: 0 auto;
-  padding: 28px 32px 48px;
+  padding: 20px 16px 14px;
   color: var(--text-muted);
   font-size: 14px;
+  text-align: center;
 }
 
 .site-footer p {
-  margin: 0 0 6px;
+  margin: 0 0 4px;
 }
 
 .site-footer a {
   display: inline-block;
-  padding: 12px 0;
-  margin-right: 18px;
+  padding: 10px 0;
+  margin: 0 9px;
   color: var(--text-muted);
 }

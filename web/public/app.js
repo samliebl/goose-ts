@@ -36,6 +36,31 @@ prefersDark.addEventListener("change", () => {
 
 syncThemeIcon();
 
+// The public-demo notice: dismissible, and the choice is remembered where the
+// browser allows it (the page works the same if storage is blocked).
+const BANNER_KEY = "regoose-demo-notice-dismissed";
+function setupBanner(show) {
+  const banner = $("public-note");
+  let dismissed = false;
+  try {
+    dismissed = localStorage.getItem(BANNER_KEY) === "1";
+  } catch {
+    /* storage unavailable */
+  }
+  banner.classList.toggle("hidden", !show || dismissed);
+  $("public-note-close").addEventListener("click", () => {
+    banner.classList.add("dismissed");
+    banner.addEventListener("transitionend", () => banner.classList.add("hidden"), {
+      once: true,
+    });
+    try {
+      localStorage.setItem(BANNER_KEY, "1");
+    } catch {
+      /* storage unavailable */
+    }
+  });
+}
+
 // Shapes the page to who's looking (see /api/me in server.ts): the admin
 // link only for the owner, who alone can use /admin (anyone else would just
 // get a 403); a public-demo notice and sign-in link for visitors without a
@@ -48,8 +73,7 @@ fetch("/api/me")
     if (me.isOwner) $("admin-link").classList.remove("hidden");
     if (!anon) $("account-link").classList.remove("hidden");
     $("signin-link").classList.toggle("hidden", !anon);
-    $("public-note").classList.toggle("hidden", !anon);
-    if (anon) $("allowed-domains").textContent = (me.allowedDomains ?? []).join(", ");
+    setupBanner(anon);
     for (const el of document.querySelectorAll("[data-member-only]")) {
       el.classList.toggle("hidden", anon);
     }

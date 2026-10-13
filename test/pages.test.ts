@@ -90,11 +90,15 @@ describe("account page", () => {
 });
 
 describe("author page", () => {
-  it("shows unset links as 'coming soon' rather than dead links, and lists what's unfinished", () => {
+  it("lists links without bullets, shows the other projects, and has nothing left to fill in", () => {
     const html = authorBody();
-    expect(html).toContain("coming soon");
-    expect(html).toContain("github.com/samliebl/goose-ts");
-    expect(authorPlaceholders().length).toBeGreaterThan(0);
+    expect(html).toContain('class="plain"');
+    expect(html).toContain("tohode.com");
+    expect(html).toContain("truyne.com");
+    expect(html).toContain("linkedin.com/in/samliebl");
+    expect(html).not.toContain("github.com/samliebl/goose-ts");
+    expect(html).not.toContain("mailto:");
+    expect(authorPlaceholders()).toEqual([]);
   });
 });
 
