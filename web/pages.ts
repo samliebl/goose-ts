@@ -82,7 +82,7 @@ export function authorBody(): string {
     <p class="tagline">${escapeHtml(AUTHOR.tagline)}</p>
   </div>
 </div>
-${AUTHOR.bio.map((p) => `<p>${escapeHtml(p)}</p>`).join("")}
+${AUTHOR.bio.map((p) => `<p>${escapeHtml(p).replace(/\*([^*]+)\*/g, "<em>$1</em>")}</p>`).join("")}
 <h2>Find me</h2>
 <ul class="plain">${links}</ul>
 <h2>Other projects</h2>

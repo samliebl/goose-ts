@@ -148,6 +148,8 @@ img.wm {
 }
 
 .brand-logo {
+  position: relative;
+  top: 5px;
   display: block;
   height: 32px;
   width: auto;

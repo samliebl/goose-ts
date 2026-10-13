@@ -18,6 +18,7 @@ export const AUTHOR = {
   bio: [
     "I like simplicity and I don’t like clutter. I’ve believed for a long time that the internet is the richest source of information in human history, and that it’s hidden behind bad design, popups, videos and ads.",
     "If I could, I’d make the internet plain text. Since I can’t, I take tools that already exist and update them for 2026. regoose is one of them.",
+    "No geese were harmed in the making of this service, despite the fact the author thinks geese have an attitude problem 🪿. But *Fly Away Home* was cool.",
   ],
   photos: [{ src: "sam.jpg", alt: "Sam Liebl smiling, in a gray hooded sweatshirt" }] as Array<{
     src: string;
