@@ -136,6 +136,13 @@ img.wm {
   color: var(--head-text);
 }
 
+@media (min-width: 641px) {
+  /* Same overall height as the other pages' header (14px + 44px + 14px + border). */
+  .topbar {
+    min-height: 74px;
+  }
+}
+
 .brand {
   display: flex;
   align-items: center;
@@ -149,7 +156,7 @@ img.wm {
 
 .brand-logo {
   position: relative;
-  top: 5px;
+  top: 8px;
   display: block;
   height: 32px;
   width: auto;

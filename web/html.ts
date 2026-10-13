@@ -90,7 +90,7 @@ export const page = (title: string, body: string, options: PageOptions = {}): st
   img.wm { height:.84em; width:auto; vertical-align:-.2265em; }
   header.site { position:relative; background:var(--head); color:var(--head-text); border-bottom:2px solid #000; }
   header.site .bar { padding:14px 32px; display:flex; align-items:center; justify-content:space-between; gap:16px; }
-  header.site a.brand { display:flex; align-items:center; min-height:44px; padding:0; } header.site a.brand img { display:block; height:32px; width:auto; position:relative; top:5px; }
+  header.site a.brand { display:flex; align-items:center; min-height:44px; padding:0; } header.site a.brand img { display:block; height:32px; width:auto; position:relative; top:8px; }
   header.site nav { display:flex; gap:8px; }
   header.site nav a { color:var(--head-text); border:1.5px solid var(--head-text); border-radius:10px; padding:0 16px; min-height:40px; display:inline-flex; align-items:center; font-size:14px; font-weight:600; text-decoration:none; }
   header.site nav a:hover { background:rgba(252,246,230,.2); }
