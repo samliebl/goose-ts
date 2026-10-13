@@ -833,6 +833,10 @@ dl dd {
   .layout {
     grid-template-columns: 1fr;
   }
+  .empty-state {
+    min-height: 0;
+    padding: 56px 24px 64px;
+  }
   .input-panel {
     position: static;
     max-height: none;
