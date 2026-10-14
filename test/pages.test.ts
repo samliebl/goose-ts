@@ -4,6 +4,7 @@ import { RETENTION_DAYS } from "../web/analytics.js";
 import { FLASH_MESSAGES, membersBody, requestsBody } from "../web/admin-ui.js";
 import { authorBody } from "./../web/pages.js";
 import { authorPlaceholders } from "../web/author.js";
+import { landingBody } from "../web/landing.js";
 import { page } from "../web/html.js";
 import { privacyBody, termsBody } from "../web/legal.js";
 import { accountBody, aboutBody, redeemBody, verifyConfirmBody } from "../web/pages.js";
@@ -165,3 +166,16 @@ describe("admin messages", () => {
 
 beforeEach(() => undefined);
 afterEach(() => undefined);
+
+describe("landing page", () => {
+  it("explains the tool, why access is by request, and links the ways in", () => {
+    const html = landingBody();
+    expect(html).toContain("Why access is by request");
+    expect(html).toContain("How to get access");
+    for (const href of ["/request-access", "/login", "/redeem", "/about"]) {
+      expect(html).toContain(`href="${href}"`);
+    }
+    expect(html).toContain("demo-stage");
+    expect(html).not.toMatch(/,[^,.]{1,60}, (and|or) /);
+  });
+});

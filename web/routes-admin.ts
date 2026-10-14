@@ -28,29 +28,22 @@ import { contactEmail } from "./site.js";
 
 const asText = (v: unknown, max: number) => (typeof v === "string" ? v.trim().slice(0, max) : "");
 
+/**
+ * The admin area is for the owner alone. Everyone else (signed out or signed
+ * in) gets the same plain "not found", so it doesn’t even confirm the page exists.
+ */
 export function requireOwner(req: Request, res: Response, next: NextFunction): void {
   const session = sessionOf(req);
-  if (!session) {
-    if (req.path.startsWith("/api/")) {
-      res.status(401).json({ ok: false, error: "Please sign in." });
-    } else {
-      res.redirect(302, "/login");
-    }
-    return;
+  if (session?.isOwner) return next();
+  if (req.originalUrl.startsWith("/api/")) {
+    res.status(404).json({ ok: false, error: "Not found." });
+  } else {
+    res.status(404).send(
+      page("Not found", "<h1>Not found</h1><p>There’s nothing at this address.</p>", {
+        viewer: session ? { email: session.email, isOwner: false } : null,
+      }),
+    );
   }
-  if (!session.isOwner) {
-    if (req.path.startsWith("/api/")) {
-      res.status(403).json({ ok: false, error: "Owner access only." });
-    } else {
-      res.status(403).send(
-        page("Forbidden", "<h1>Owner access only</h1>", {
-          viewer: { email: session.email, isOwner: false },
-        }),
-      );
-    }
-    return;
-  }
-  next();
 }
 
 export type InviteOutcome =

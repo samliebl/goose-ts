@@ -29,6 +29,8 @@ import {
 import { consumeDailyUsage } from "./db.js";
 import { privacyBody, termsBody } from "./legal.js";
 import { aboutBody, authorBody } from "./pages.js";
+import { landingBody } from "./landing.js";
+import { page } from "./html.js";
 import {
   buildConfiguration,
   createUrlGuard,
@@ -41,7 +43,7 @@ import {
 } from "./policy.js";
 import { createRateLimiter } from "./rate-limit.js";
 import { registerAccessRoutes, render } from "./routes-access.js";
-import { registerAdminRoutes } from "./routes-admin.js";
+import { registerAdminRoutes, requireOwner } from "./routes-admin.js";
 import { isProduction, ownerEmail } from "./secrets.js";
 import { getSession, renewIfDue, sessionOf, type AuthedRequest } from "./session.js";
 import { TERMS_VERSION } from "./site.js";
@@ -170,7 +172,7 @@ app.get("/about", staticPage("About regoose", aboutBody));
 app.get("/author", staticPage("About the author", authorBody));
 app.get("/terms", staticPage("Terms of Service", termsBody));
 app.get("/privacy", staticPage("Privacy Policy", privacyBody));
-app.use("/brand", express.static(join(here, "public", "brand"), { maxAge: "1d" }));
+app.use("/brand", express.static(join(here, "public", "brand"), { maxAge: "1h" }));
 // Typefaces are shared by the sign-in pages, so they sit outside the session gate.
 app.use("/fonts", express.static(join(here, "public", "fonts"), { maxAge: "7d" }));
 app.get("/fonts.css", (_req, res) => {
@@ -233,6 +235,28 @@ app.post("/api/beacon", express.json({ limit: "2kb" }), (req, res) => {
 
 // Sign-in, access codes, access requests, the account page.
 registerAccessRoutes(app, { clientIp, publicMode: PUBLIC_MODE });
+
+// Nothing under the admin paths is reachable by anyone but the owner, and
+// everyone else sees a plain "not found" (before the sign-in redirect below
+// can hint that the page exists).
+app.use(["/admin", "/api/admin"], requireOwner);
+
+// The front page: visitors get the description and a way in; members (or
+// anyone, in public mode) get the tool itself, which is served further down.
+app.get("/", (req: Request, res: Response, next: NextFunction) => {
+  if (PUBLIC_MODE || sessionOf(req)) return next();
+  res.send(
+    page("regoose: a healthier reading experience", landingBody(), {
+      viewer: null,
+      analytics: true,
+      wide: true,
+      head: '<link rel="stylesheet" href="/brand/landing.css">',
+      scripts: ["/brand/landing.js"],
+      description:
+        "regoose turns a cluttered web page into clean, readable text. No popups, no ads, no autoplay video. Access is by invitation.",
+    }),
+  );
+});
 
 // -- Everything below here needs a session, unless PUBLIC_MODE is on ------
 

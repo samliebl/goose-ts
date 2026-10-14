@@ -13,6 +13,12 @@ export interface PageOptions {
   viewer?: PageViewer | null;
   /** Leave the analytics beacon off (admin and account pages). */
   analytics?: boolean;
+  /** Extra tags for the <head> (a page-specific stylesheet, say). */
+  head?: string;
+  /** Page-specific scripts, loaded from this site. */
+  scripts?: string[];
+  /** The meta description search engines and link previews show. */
+  description?: string;
 }
 
 const REPO = "https://github.com/samliebl/goose-ts";
@@ -74,12 +80,13 @@ export const page = (title: string, body: string, options: PageOptions = {}): st
   return `<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>${escapeHtml(title)}</title>
-<meta name="theme-color" content="#1594e9">
+<meta name="theme-color" content="#1594e9">${options.description ? `<meta name="description" content="${escapeHtml(options.description)}"><meta property="og:description" content="${escapeHtml(options.description)}">` : ""}
 <link rel="icon" href="/brand/favicon.svg" type="image/svg+xml"><link rel="icon" href="/brand/favicon-32.png" type="image/png" sizes="32x32">
 <link rel="apple-touch-icon" href="/brand/apple-touch-icon.png"><link rel="manifest" href="/brand/site.webmanifest">
 <meta property="og:site_name" content="regoose"><meta property="og:title" content="${escapeHtml(title)}"><meta property="og:type" content="website">
 <meta property="og:image" content="https://regoose.com/brand/og.png"><meta name="twitter:card" content="summary_large_image">
 <link rel="stylesheet" href="/fonts.css">
+${options.head ?? ""}
 <style>
   :root { --bg:#ffffff; --panel:#fcf6e6; --text:#141b2d; --muted:#4a5470; --link:#0a66b8; --border:#e7e1d0; --cream:#fcf6e6; --btn:#0a66b8; --btn-text:#ffffff; --bad:#b3261e; --good:#1a6b36; --bar:#0a66b8; --head:#1594e9; --head-text:#fcf6e6; }
   @media (prefers-color-scheme: dark) { :root { --bg:#141b2d; --panel:#1b2540; --text:#fcf6e6; --muted:#a9b3cc; --link:#4fb0f5; --border:#2b3556; --btn:#1594e9; --btn-text:#141b2d; --bad:#ff8a80; --good:#6fd08c; --bar:#1594e9; --head:#1594e9; --head-text:#fcf6e6; --cream:#fcf6e6; } }
@@ -154,6 +161,7 @@ export const page = (title: string, body: string, options: PageOptions = {}): st
 <a href="/terms">Terms</a> <a href="/privacy">Privacy</a> <a href="/about">About</a> <a href="/author">Author</a> <a href="${REPO}" rel="noopener">Source on GitHub</a></footer>
 ${options.analytics === false ? "" : '<script src="/m.js" defer></script>'}
 <script src="/brand/menu.js" defer></script>
+${(options.scripts ?? []).map((src) => `<script src="${escapeHtml(src)}" defer></script>`).join("\n")}
 </body></html>`;
 };
 
