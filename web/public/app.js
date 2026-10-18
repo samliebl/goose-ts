@@ -777,36 +777,59 @@ function renderSidebar() {
   sidebarMetadata.append(buildMetadataBlock(item?.ok ? item.article : undefined));
 }
 
-// The Configuration box eases open and shut instead of snapping. (Falls back
-// to the browser's instant toggle if animations are off or unsupported.)
-for (const details of document.querySelectorAll("details.config")) {
-  const summary = details.querySelector("summary");
-  const body = details.querySelector(".config-grid");
-  if (!summary || !body || typeof body.animate !== "function") continue;
-  let busy = false;
-  summary.addEventListener("click", (event) => {
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    event.preventDefault();
-    if (busy) return;
-    busy = true;
-    const opening = !details.open;
-    if (opening) details.open = true;
-    else details.classList.add("closing");
-    const style = getComputedStyle(body);
-    const full = body.offsetHeight;
-    const pad = [style.paddingTop, style.paddingBottom];
-    const shut = { height: "0px", paddingTop: "0px", paddingBottom: "0px", opacity: 0 };
-    const wide = { height: `${full}px`, paddingTop: pad[0], paddingBottom: pad[1], opacity: 1 };
-    body.style.overflow = "hidden";
-    const animation = body.animate(opening ? [shut, wide] : [wide, shut], {
-      duration: 260,
-      easing: "cubic-bezier(0.2, 0.7, 0.2, 1)",
-    });
-    animation.onfinish = () => {
-      if (!opening) details.open = false;
-      details.classList.remove("closing");
-      body.style.overflow = "";
-      busy = false;
-    };
-  });
+// Every expandable box (Configuration, the result cards, Links, Tweets, Raw
+// JSON and so on) eases open and shut instead of snapping. One delegated
+// handler covers boxes built later too. With animations off or unsupported the
+// browser's own instant toggle is left alone.
+const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+const animating = new WeakSet();
+
+function disclosureBody(details, summary) {
+  let body = details.querySelector(":scope > .disclosure-body");
+  if (!body) {
+    body = document.createElement("div");
+    body.className = "disclosure-body";
+    while (summary.nextSibling) body.append(summary.nextSibling);
+    details.append(body);
+  }
+  return body;
 }
+
+document.addEventListener("click", (event) => {
+  const summary = event.target instanceof Element ? event.target.closest("summary") : null;
+  const details = summary?.parentElement;
+  if (!summary || !(details instanceof HTMLDetailsElement) || event.defaultPrevented) return;
+  // Buttons and links inside a summary (the "Metadata" toggle, say) do their own thing.
+  if (event.target.closest("button, a, input, select, textarea") !== null) return;
+  if (reduceMotion.matches || typeof details.animate !== "function") return;
+
+  event.preventDefault();
+  if (animating.has(details)) return;
+  animating.add(details);
+
+  const body = disclosureBody(details, summary);
+  const opening = !details.open;
+  if (opening) details.open = true;
+  else details.classList.add("closing");
+
+  const full = body.offsetHeight;
+  const shut = { height: "0px", opacity: 0 };
+  const wide = { height: `${full}px`, opacity: 1 };
+  body.style.overflow = "hidden";
+  const animation = body.animate(opening ? [shut, wide] : [wide, shut], {
+    duration: Math.min(380, 200 + full * 0.12),
+    easing: "cubic-bezier(0.2, 0.7, 0.2, 1)",
+  });
+  let finished = false;
+  const finish = () => {
+    if (finished) return;
+    finished = true;
+    if (!opening) details.open = false;
+    details.classList.remove("closing");
+    body.style.overflow = "";
+    animating.delete(details);
+  };
+  animation.onfinish = animation.oncancel = finish;
+  // A hidden tab can hold animation events back; this makes sure the box never gets stuck.
+  setTimeout(finish, animation.effect.getTiming().duration + 600);
+});
