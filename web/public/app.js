@@ -589,14 +589,65 @@ function sideSection(heading, contentEl) {
   return section;
 }
 
+/** Copies text to the clipboard; resolves true if it worked. */
+async function copyText(text) {
+  try {
+    await navigator.clipboard.writeText(text);
+    return true;
+  } catch {
+    // Older browsers, or a page the clipboard API won't serve: the long way round.
+    const area = document.createElement("textarea");
+    area.value = text;
+    area.setAttribute("readonly", "");
+    area.style.position = "fixed";
+    area.style.opacity = "0";
+    document.body.append(area);
+    area.select();
+    let ok = false;
+    try {
+      ok = document.execCommand("copy");
+    } catch {
+      /* nothing more to try */
+    }
+    area.remove();
+    return ok;
+  }
+}
+
+/** One row in the Links list: a Copy button, then the address on a single line. */
+function linkRow(href) {
+  const row = document.createDocumentFragment();
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = "copy-btn";
+  button.textContent = "Copy";
+  button.setAttribute("aria-label", `Copy ${href}`);
+  let reset = 0;
+  button.addEventListener("click", async () => {
+    const ok = await copyText(href);
+    button.textContent = ok ? "Copied ✓" : "Couldn’t copy";
+    button.classList.toggle("done", ok);
+    clearTimeout(reset);
+    reset = setTimeout(() => {
+      button.textContent = "Copy";
+      button.classList.remove("done");
+    }, 1600);
+  });
+  const text = document.createElement("span");
+  text.className = "link-text";
+  text.textContent = href;
+  row.append(button, text);
+  return row;
+}
+
 /** One collapsed <details> box holding a count and a list of rendered items. */
-function scrollListDetails(label, items, renderItem) {
+function scrollListDetails(label, items, renderItem, variant) {
   const details = document.createElement("details");
   details.className = "side-section";
   const summary = document.createElement("summary");
   summary.textContent = `${label} (${items.length})`;
   const list = document.createElement("ul");
-  list.className = "scroll-list";
+  list.className = variant ? `scroll-list ${variant}` : "scroll-list";
   for (const value of items) {
     const li = document.createElement("li");
     li.append(renderItem(value));
@@ -646,27 +697,36 @@ function buildMetadataBlock(article) {
   }
   if (ogList.childElementCount > 0) wrap.append(sideSection("OpenGraph", ogList));
 
-  wrap.append(
-    scrollListDetails("Links", article?.links ?? [], (href) => document.createTextNode(href)),
-  );
-  wrap.append(
-    scrollListDetails("Tweets", article?.tweets ?? [], (tweetHtml) => {
-      const code = document.createElement("code");
-      code.textContent = tweetHtml; // escaped text, not rendered as live HTML
-      return code;
-    }),
-  );
-  wrap.append(
-    scrollListDetails("Videos", article?.movies ?? [], (movie) => {
-      const frag = document.createDocumentFragment();
-      const summary = document.createElement("div");
-      summary.textContent = `${movie.provider ?? "unknown"} · ${movie.embedType ?? ""} · ${movie.width ?? "?"}×${movie.height ?? "?"}`;
-      const code = document.createElement("code");
-      code.textContent = movie.embedCode ?? movie.src ?? "";
-      frag.append(summary, code);
-      return frag;
-    }),
-  );
+  // One link per line, never wrapped: the list scrolls sideways to show a whole
+  // address, and each row has a button that copies it.
+  wrap.append(scrollListDetails("Links", article?.links ?? [], linkRow, "links"));
+
+  // Tweets and videos only get a box when there are some; otherwise a line of
+  // small print at the very bottom says there are none.
+  const tweets = article?.tweets ?? [];
+  const videos = article?.movies ?? [];
+  if (tweets.length > 0) {
+    wrap.append(
+      scrollListDetails("Tweets", tweets, (tweetHtml) => {
+        const code = document.createElement("code");
+        code.textContent = tweetHtml; // escaped text, not rendered as live HTML
+        return code;
+      }),
+    );
+  }
+  if (videos.length > 0) {
+    wrap.append(
+      scrollListDetails("Videos", videos, (movie) => {
+        const frag = document.createDocumentFragment();
+        const summary = document.createElement("div");
+        summary.textContent = `${movie.provider ?? "unknown"} · ${movie.embedType ?? ""} · ${movie.width ?? "?"}×${movie.height ?? "?"}`;
+        const code = document.createElement("code");
+        code.textContent = movie.embedCode ?? movie.src ?? "";
+        frag.append(summary, code);
+        return frag;
+      }),
+    );
+  }
 
   const jsonDetails = document.createElement("details");
   jsonDetails.className = "side-section";
@@ -677,6 +737,16 @@ function buildMetadataBlock(article) {
   jsonPre.textContent = article ? JSON.stringify(article, null, 2) : "";
   jsonDetails.append(jsonSummary, jsonPre);
   wrap.append(jsonDetails);
+
+  const none = [];
+  if (tweets.length === 0) none.push("0 tweets");
+  if (videos.length === 0) none.push("0 videos");
+  if (none.length > 0) {
+    const note = document.createElement("p");
+    note.className = "side-note";
+    note.textContent = none.join(", ");
+    wrap.append(note);
+  }
 
   return wrap;
 }
