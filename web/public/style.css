@@ -263,18 +263,13 @@ img.wm {
 }
 
 .input-panel {
+  /* No scrolling of its own: the sidebar grows with its content and the page
+     scrolls as one, so there's only ever a single scrollbar. */
   background: var(--bg-panel);
-  scrollbar-width: thin;
-  scrollbar-color: var(--border) transparent;
-  scrollbar-gutter: stable;
   display: flex;
   flex-direction: column;
   gap: 28px;
-  position: sticky;
-  top: 0;
-  align-self: start;
-  max-height: 100vh;
-  overflow-y: auto;
+  min-width: 0;
 }
 
 .tabs {
@@ -859,8 +854,6 @@ dl dd {
     padding: 56px 24px 64px;
   }
   .input-panel {
-    position: static;
-    max-height: none;
     border-bottom: 1px solid var(--border);
   }
   .results-layout {
