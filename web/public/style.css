@@ -97,6 +97,12 @@ details[open] > summary::before {
   transform: rotate(45deg);
 }
 
+/* While a disclosure is animating shut its open attribute is still set, so
+   the chevron is turned back by class. */
+details[open].closing > summary::before {
+  transform: rotate(-45deg);
+}
+
 html {
   -webkit-text-size-adjust: 100%;
 }
@@ -247,6 +253,9 @@ img.wm {
   gap: 0;
   flex: 1 0 auto;
   border-bottom: 1px solid var(--border);
+  /* The column divider is drawn here, not on the sticky panel, so it runs the
+     full height down to the bottom rule however tall the page gets. */
+  background: linear-gradient(var(--border), var(--border)) 440px 0 / 1px 100% no-repeat;
 }
 
 .panel {
@@ -254,8 +263,10 @@ img.wm {
 }
 
 .input-panel {
-  border-right: 1px solid var(--border);
   background: var(--bg-panel);
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+  scrollbar-gutter: stable;
   display: flex;
   flex-direction: column;
   gap: 28px;
@@ -841,6 +852,7 @@ dl dd {
 @media (max-width: 900px) {
   .layout {
     grid-template-columns: 1fr;
+    background: none;
   }
   .empty-state {
     min-height: 0;
@@ -849,7 +861,6 @@ dl dd {
   .input-panel {
     position: static;
     max-height: none;
-    border-right: none;
     border-bottom: 1px solid var(--border);
   }
   .results-layout {

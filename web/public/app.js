@@ -706,3 +706,37 @@ function renderSidebar() {
   clearChildren(sidebarMetadata);
   sidebarMetadata.append(buildMetadataBlock(item?.ok ? item.article : undefined));
 }
+
+// The Configuration box eases open and shut instead of snapping. (Falls back
+// to the browser's instant toggle if animations are off or unsupported.)
+for (const details of document.querySelectorAll("details.config")) {
+  const summary = details.querySelector("summary");
+  const body = details.querySelector(".config-grid");
+  if (!summary || !body || typeof body.animate !== "function") continue;
+  let busy = false;
+  summary.addEventListener("click", (event) => {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    event.preventDefault();
+    if (busy) return;
+    busy = true;
+    const opening = !details.open;
+    if (opening) details.open = true;
+    else details.classList.add("closing");
+    const style = getComputedStyle(body);
+    const full = body.offsetHeight;
+    const pad = [style.paddingTop, style.paddingBottom];
+    const shut = { height: "0px", paddingTop: "0px", paddingBottom: "0px", opacity: 0 };
+    const wide = { height: `${full}px`, paddingTop: pad[0], paddingBottom: pad[1], opacity: 1 };
+    body.style.overflow = "hidden";
+    const animation = body.animate(opening ? [shut, wide] : [wide, shut], {
+      duration: 260,
+      easing: "cubic-bezier(0.2, 0.7, 0.2, 1)",
+    });
+    animation.onfinish = () => {
+      if (!opening) details.open = false;
+      details.classList.remove("closing");
+      body.style.overflow = "";
+      busy = false;
+    };
+  });
+}
